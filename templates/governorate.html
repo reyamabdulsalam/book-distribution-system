@@ -1,0 +1,270 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المحافظة - نظام إدارة توزيع الكتب</title>
+     <link rel="stylesheet" href="{% static 'css/.css' %}?v=1">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- الشريط الجانبي -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                    <span>محافظة صنعاء</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="active"><a href="#" data-section="home-section"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="#" data-section="طلبات-الكتب-section"><i class="fas fa-book"></i> طلبات الكتب</a></li>
+                    <li><a href="#" data-section="المدارس-section"><i class="fas fa-school"></i> المدارس</a></li>
+                    <li><a href="#" data-section="إدارة-المخزون-section"><i class="fas fa-box"></i> إدارة المخزون</a></li>
+                    <li><a href="#" data-section="المندوبون-section"><i class="fas fa-truck"></i> المندوبون</a></li>
+                    <li><a href="#" data-section="التقارير-section"><i class="fas fa-chart-bar"></i> التقارير</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- المحتوى الرئيسي -->
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-left">
+                    <h1>لوحة تحكم محافظة صنعاء</h1>
+                    <p>إدارة طلبات الكتب المدرسية للمدارس</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span>مسؤول المحافظة</span>
+                    </div>
+                    <button class="logout-btn" onclick="window.location.href='/'">تسجيل الخروج</button>
+                </div>
+            </header>
+
+            <!-- قسم الرئيسية -->
+            <div id="home-section" class="content-section" style="display: block;">
+                <div class="dashboard-cards">
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>طلبات الكتب</h3>
+                            <p class="stats">247</p>
+                            <span class="card-desc">طلب هذا الشهر</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>مكتمل التوصيل</h3>
+                            <p class="stats">184</p>
+                            <span class="card-desc">طلب تم توصيله</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>قيد المعالجة</h3>
+                            <p class="stats">63</p>
+                            <span class="card-desc">طلب قيد التنفيذ</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-school"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>المدارس النشطة</h3>
+                            <p class="stats">42</p>
+                            <span class="card-desc">مدرسة هذا الشهر</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>طلبات المدارس الأخيرة</h2>
+                        <button class="btn-primary">عرض الكل</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>رقم الطلب</th>
+                                    <th>المدرسة</th>
+                                    <th>تاريخ الطلب</th>
+                                    <th>عدد الكتب</th>
+                                    <th>الحالة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>#SCH001</td>
+                                    <td>مدرسة الثورة</td>
+                                    <td>2025-09-02</td>
+                                    <td>1,420</td>
+                                    <td><span class="status status-pending">قيد المراجعة</span></td>
+                                    <td>
+                                        <button class="action-btn view-btn"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn approve-btn"><i class="fas fa-check"></i></button>
+                                        <button class="action-btn reject-btn"><i class="fas fa-times"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>#SCH002</td>
+                                    <td>مدرسة النهضة</td>
+                                    <td>2025-09-01</td>
+                                    <td>2,150</td>
+                                    <td><span class="status status-approved">معتمد</span></td>
+                                    <td>
+                                        <button class="action-btn view-btn"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn assign-btn"><i class="fas fa-truck"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>#SCH003</td>
+                                    <td>مدرسة الحرية</td>
+                                    <td>2025-08-31</td>
+                                    <td>1,850</td>
+                                    <td><span class="status status-delivered">تم التوصيل</span></td>
+                                    <td>
+                                        <button class="action-btn view-btn"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn report-btn"><i class="fas fa-file"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>#SCH004</td>
+                                    <td>مدرسة المستقبل</td>
+                                    <td>2025-08-30</td>
+                                    <td>980</td>
+                                    <td><span class="status status-progress">قيد التوصيل</span></td>
+                                    <td>
+                                        <button class="action-btn view-btn"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn track-btn"><i class="fas fa-map-marker-alt"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>إنشاء طلب جديد للوزارة</h2>
+                    </div>
+                    <div class="request-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="educationLevel">المرحلة التعليمية</label>
+                                <select id="educationLevel" required>
+                                    <option value="">اختر المرحلة التعليمية</option>
+                                    <option value="primary">المرحلة الابتدائية</option>
+                                    <option value="intermediate">المرحلة المتوسطة</option>
+                                    <option value="secondary">المرحلة الثانوية</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="subject">المادة الدراسية</label>
+                                <select id="subject" required>
+                                    <option value="">اختر المادة الدراسية</option>
+                                    <option value="math">الرياضيات</option>
+                                    <option value="science">العلوم</option>
+                                    <option value="arabic">اللغة العربية</option>
+                                    <option value="english">اللغة الإنجليزية</option>
+                                    <option value="islamic">التربية الإسلامية</option>
+                                    <option value="history">التاريخ</option>
+                                    <option value="geography">الجغرافيا</option>
+                                    <option value="french">اللغة الفرنسية</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="quantity">الكمية المطلوبة</label>
+                                <input type="number" id="quantity" placeholder="أدخل عدد الكتب المطلوبة" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="notes">ملاحظات (اختياري)</label>
+                                <textarea id="notes" placeholder="أضف أي ملاحظات إضافية هنا" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary" id="submitRequest">إرسال الطلب للوزارة</button>
+                            <button type="button" class="btn-secondary" id="saveDraft">حفظ كمسودة</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- قسم طلبات الكتب -->
+            <div id="طلبات-الكتب-section" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h2>طلبات الكتب من المدارس</h2>
+                </div>
+                <div class="table-container">
+                    <p>هنا سيتم إدارة طلبات الكتب الواردة من المدارس</p>
+                </div>
+            </div>
+
+            <!-- قسم المدارس -->
+            <div id="المدارس-section" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h2>إدارة المدارس</h2>
+                </div>
+                <div class="table-container">
+                    <p>هنا سيتم إدارة معلومات المدارس في المحافظة</p>
+                </div>
+            </div>
+
+            <!-- قسم إدارة المخزون -->
+            <div id="إدارة-المخزون-section" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h2>إدارة المخزون</h2>
+                </div>
+                <div class="table-container">
+                    <p>هنا سيتم متابعة مخزون الكتب في المستودعات</p>
+                </div>
+            </div>
+
+            <!-- قسم المندوبون -->
+            <div id="المندوبون-section" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h2>إدارة المندوبين</h2>
+                </div>
+                <div class="table-container">
+                    <p>هنا سيتم إدارة مندوبي التوزيع</p>
+                </div>
+            </div>
+
+            <!-- قسم التقارير -->
+            <div id="التقارير-section" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h2>تقارير المحافظة</h2>
+                </div>
+                <div class="table-container">
+                    <p>هنا سيتم عرض تقارير المحافظة</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{% static 'js/governorate.js' %}?v=1"></script>
+</body>
+</html>

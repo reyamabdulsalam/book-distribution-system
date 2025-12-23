@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة توزيع الكتب المدرسية - وزارة التربية والتعليم</title>
+    <!-- غير هذا -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=1">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-book"></i>
+                    <h1>نظام إدارة توزيع الكتب المدرسية</h1>
+                </div>
+                <div class="auth-buttons">
+                    <button class="btn-primary" data-navigate="governorate">
+                        <i class="fas fa-city"></i> دخول المحافظة
+                    </button>
+                    <button class="btn-secondary" data-navigate="ministry">
+                        <i class="fas fa-landmark"></i> دخول الوزارة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h2>نظام متكامل لإدارة توزيع الكتب المدرسية</h2>
+                    <p>إدارة طلبات الكتب، متابعة التوزيع، وتوليد التقارير في مكان واحد</p>
+                    <div class="hero-features">
+                        <div class="feature">
+                            <i class="fas fa-school"></i>
+                            <h3>إدارة المدارس</h3>
+                            <p>إنشاء ومتابعة طلبات الكتب المدرسية</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-truck"></i>
+                            <h3>تتبع التوزيع</h3>
+                            <p>متابعة عملية توزيع الكتب حتى الاستلام</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-chart-line"></i>
+                            <h3>تقارير وإحصائيات</h3>
+                            <p>تقارير مفصلة عن عملية التوزيع والمخزون</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="process">
+            <div class="container">
+                <h2>كيفية عمل النظام</h2>
+                <div class="process-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>إنشاء الطلب</h3>
+                        <p>تقوم المدرسة بإنشاء طلب كتب حسب الاحتياج</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>مراجعة المحافظة</h3>
+                        <p>تقوم المحافظة بمراجعة الطلب والموافقة عليه</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>تأكيد الوزارة</h3>
+                        <p>تقوم الوزارة بمراجعة طلبات المحافظات</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h3>التوزيع والتسليم</h3>
+                        <p>يتم توزيع الكتب وتسليمها للمدارس</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 نظام إدارة توزيع الكتب المدرسية - وزارة التربية والتعليم</p>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/main.js' %}?v=1"></script>
+</body>
+</html>

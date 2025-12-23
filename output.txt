@@ -1,0 +1,175 @@
+     ) (
+   : : 
+       
+   
+  /    /
+
+                  
+.  
+             
+        . 
+ "    "        
+            
+.
+
+
+    )Overview(
+
+
+:      
+
+ 
+: 
+   · .) (
+.  ·  ·
+
+Flutter
+Mobile App
+   ­  (  
+­   .) 
+
+
+SQL
+Database
+   
+
+Django
+(Python)
+   Backend + Dashboard (
+.) 
+
+    :   .1   Excel     . 
+    :   .2         (  .) 
+    :    .3         
+.
+       :  .4 .     
+     :    .5 .     
+     :   .6       
+. 
+
+ ) Problems(
+          
+:   
+
+         .1 . 
+         .2 . 
+        .3 .    
+       .4 .   
+        .5 .    
+      .6 .    
+
+ (Objectives(
+         
+:  
+
+:
+      .1 .
+      .2 .
+      .3 . 
+      .4 .
+.      .5
+
+ 
+(Project Scope and Limitation)
+      :         
+                 
+.      
+
+    · (Waterfall Model):
+    o .  
+      o .  
+    o     .
+
+
+ 
+
+ 
+ 
+
+
+
+ )(
+
+ 
+
+                   
+         .      
+  
+:waterfall   .1                                                
+          
+. 
+
+  
+
+
+.   o .  o
+.   o     o
+. .      o
+ / 
+.    o .    o
+.    o       o
+
+
+
+: ·    o
+. .   o
+.  o .  o .  o
+:  · .  o .  o .    o
+.  o
+
+    QR   
+    .
+    .
+
+   .
+   . 
+(     .)  %70 ­ %50
+
+ERD
+
+
+Class Diagram
+
+Use Cases
+
+Use case
+
+Use case
+
+Use case
+
+Use case
+
+Sequence diagram
+
+Sequence diagram
+
+Sequence diagram
+
+Sequence diagram
+
+Activate diagram
+
+Activate diagram
+
+Activate diagram
+
+Activate diagram
+
+
+
+     
+
+Prototype 
+
+
+
+     
+
+Prototype 
+
+
+           .
+.           .) ­  ­  ­ (  .      
+
+

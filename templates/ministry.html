@@ -1,0 +1,318 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الوزارة - نظام إدارة توزيع الكتب</title>
+    <link rel="stylesheet" href="{% static 'css/ministry.css' %}?v=1">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- الشريط الجانبي -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-landmark"></i>
+                    <span>وزارة التربية والتعليم</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="active"><a href="#"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="#"><i class="fas fa-book"></i> طلبات الكتب</a></li>
+                    <li><a href="#"><i class="fas fa-truck-loading"></i> إدارة الشحنات</a></li>
+                    <li><a href="#"><i class="fas fa-print"></i> المطابع</a></li>
+                    <li><a href="#"><i class="fas fa-chart-bar"></i> التقارير</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> الإعدادات</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- المحتوى الرئيسي -->
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-left">
+                    <h1>لوحة تحكم الوزارة</h1>
+                    <p>مراقبة وإدارة عملية توزيع الكتب المدرسية على المحافظات</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span>مسؤول الوزارة</span>
+                    </div>
+                    <button class="logout-btn" onclick="window.location.href='/'">تسجيل الخروج</button>
+                </div>
+            </header>
+
+            <div class="dashboard-cards">
+                <div class="card">
+                    <div class="card-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>إجمالي الطلبات</h3>
+                        <p class="stats">1,247</p>
+                        <span class="card-desc">طلب كتب هذا الشهر</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>الطلبات المكتملة</h3>
+                        <p class="stats">984</p>
+                        <span class="card-desc">طلب تم توزيعها</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>الشحنات النشطة</h3>
+                        <p class="stats">18</p>
+                        <span class="card-desc">شحنة قيد التوصيل</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>المحافظات المغطاة</h3>
+                        <p class="stats">22</p>
+                        <span class="card-desc">محافظة هذا العام</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- قسم الرسوم البيانية -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>الإحصائيات والتقارير</h2>
+                    <div class="filter-options">
+                        <select id="reportPeriod">
+                            <option value="monthly">هذا الشهر</option>
+                            <option value="quarterly">هذا الربع</option>
+                            <option value="yearly">هذه السنة</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <h3>توزيع الطلبات حسب المحافظة</h3>
+                        <canvas id="governorateChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>حالة الطلبات</h3>
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>الكتب الأكثر طلباً</h3>
+                        <canvas id="booksChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>معدل إنجاز الشحنات</h3>
+                        <canvas id="shipmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>طلبات المحافظات الجديدة</h2>
+                    <button class="btn-primary">عرض الكل</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>رقم الطلب</th>
+                                <th>المحافظة</th>
+                                <th>المرحلة</th>
+                                <th>المادة</th>
+                                <th>الكمية</th>
+                                <th>تاريخ الطلب</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#GOV123</td>
+                                <td>صنعاء</td>
+                                <td>ابتدائية</td>
+                                <td>الرياضيات</td>
+                                <td>15,420</td>
+                                <td>2025-09-01</td>
+                                <td><span class="status status-pending">قيد المراجعة</span></td>
+                                <td>
+                                    <button class="action-btn view-btn"><i class="fas fa-eye"></i></button>
+                                    <button class="action-btn approve-btn"><i class="fas fa-check"></i></button>
+                                    <button class="action-btn reject-btn"><i class="fas fa-times"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#GOV124</td>
+                                <td>عدن</td>
+                                <td>ثانوية</td>
+                                <td>العلوم</td>
+                                <td>12,850</td>
+                                <td>2025-08-30</td>
+                                <td><span class="status status-pending">قيد المراجعة</span></td>
+                                <td>
+                                    <button class="action-btn view-btn"><i class="fas fa-eye"></i></button>
+                                    <button class="action-btn approve-btn"><i class="fas fa-check"></i></button>
+                                    <button class="action-btn reject-btn"><i class="fas fa-times"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#GOV125</td>
+                                <td>حضرموت</td>
+                                <td>متوسطة</td>
+                                <td>اللغة العربية</td>
+                                <td>9,320</td>
+                                <td>2025-08-29</td>
+                                <td><span class="status status-approved">معتمدة</span></td>
+                                <td>
+                                    <button class="action-btn view-btn"><i class="fas fa-eye"></i></button>
+                                    <button class="action-btn ship-btn"><i class="fas fa-truck"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>إدارة الشحنات</h2>
+                    <button class="btn-primary" id="newShipmentBtn">شحنة جديدة</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>رقم الشحنة</th>
+                                <th>المحافظة</th>
+                                <th>الكتب</th>
+                                <th>الكمية</th>
+                                <th>تاريخ الشحن</th>
+                                <th>الحالة</th>
+                                <th>التتبع</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#SHIP1001</td>
+                                <td>صنعاء</td>
+                                <td>رياضيات - علوم</td>
+                                <td>28,250</td>
+                                <td>2025-09-05</td>
+                                <td><span class="status status-progress">قيد التوصيل</span></td>
+                                <td>TRK-789456123</td>
+                                <td>
+                                    <button class="action-btn view-btn"><i class="fas fa-eye"></i></button>
+                                    <button class="action-btn track-btn"><i class="fas fa-map-marker-alt"></i></button>
+                                    <button class="action-btn complete-btn"><i class="fas fa-check-circle"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#SHIP1002</td>
+                                <td>عدن</td>
+                                <td>لغة عربية - تربية إسلامية</td>
+                                <td>22,150</td>
+                                <td>2025-09-03</td>
+                                <td><span class="status status-delivered">تم التسليم</span></td>
+                                <td>TRK-321654987</td>
+                                <td>
+                                    <button class="action-btn view-btn"><i class="fas fa-eye"></i></button>
+                                    <button class="action-btn invoice-btn"><i class="fas fa-file-invoice"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#SHIP1003</td>
+                                <td>تعز</td>
+                                <td>جميع المواد</td>
+                                <td>45,800</td>
+                                <td>2025-09-10</td>
+                                <td><span class="status status-pending">قيد التجهيز</span></td>
+                                <td>-</td>
+                                <td>
+                                    <button class="action-btn view-btn"><i class="fas fa-eye"></i></button>
+                                    <button class="action-btn schedule-btn"><i class="fas fa-calendar"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- نموذج إنشاء شحنة جديدة -->
+            <div class="content-section" id="newShipmentForm" style="display: none;">
+                <div class="section-header">
+                    <h2>إنشاء شحنة جديدة</h2>
+                    <button class="btn-secondary" id="closeForm">إلغاء</button>
+                </div>
+                <div class="shipment-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="shipmentGovernorate">المحافظة</label>
+                            <select id="shipmentGovernorate" required>
+                                <option value="">اختر المحافظة</option>
+                                <option value="sanaa">صنعاء</option>
+                                <option value="aden">عدن</option>
+                                <option value="taiz">تعز</option>
+                                <option value="hodeidah">الحديدة</option>
+                                <option value="hadramout">حضرموت</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="shipmentDate">تاريخ الشحن</label>
+                            <input type="date" id="shipmentDate" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="approvedRequests">الطلبات المعتمدة</label>
+                            <select id="approvedRequests" multiple size="4">
+                                <option value="req1">طلب #GOV125 - رياضيات (9,320)</option>
+                                <option value="req2">طلب #GOV126 - علوم (7,500)</option>
+                                <option value="req3">طلب #GOV127 - لغة عربية (8,200)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="totalQuantity">الكمية الإجمالية</label>
+                            <input type="text" id="totalQuantity" value="24,020" readonly>
+                            <label for="transportType">وسيلة النقل</label>
+                            <select id="transportType">
+                                <option value="truck">شاحنة</option>
+                                <option value="van">فان</option>
+                                <option value="air">جوي</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-primary">إنشاء الشحنة</button>
+                        <button class="btn-secondary">حفظ كمسودة</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{% static 'js/ministry.js' %}?v=1"></script>
+</body>
+</html>
