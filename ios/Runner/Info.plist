@@ -45,5 +45,15 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>نحتاج إلى الكاميرا لمسح رموز QR للشحنات</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>نحتاج إلى الميكروفون لمسح رموز QR</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>نحتاج إلى موقعك لتأكيد التوصيل</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>نحتاج إلى موقعك لتتبع التوصيل</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>نحتاج إلى الوصول للصور لإرفاق صور الإثبات</string>
 </dict>
 </plist>

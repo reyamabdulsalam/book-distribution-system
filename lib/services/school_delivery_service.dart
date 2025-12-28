@@ -27,7 +27,7 @@ class SchoolDeliveryService with ChangeNotifier {
 
     try {
       var uri = Uri.parse(
-          '${AppConfig.apiBaseUrl}/api/warehouses/mobile/school/deliveries/incoming/');
+          '${AppConfig.apiBaseUrl}/api/warehouses/school/shipments/incoming/');
 
       if (status != null) {
         uri = uri.replace(queryParameters: {'status': status});
@@ -191,7 +191,7 @@ class SchoolDeliveryService with ChangeNotifier {
     }
   }
 
-  /// 4. API الموحد لمسح QR Code (للجميع)
+  /// 4. API الموحد لمسح QR Code (للجميع) ✅ متوافق مع Backend
   Future<QrScanResponse> scanQrCodeUnified({
     required String token,
     String? recipientName,
@@ -200,18 +200,24 @@ class SchoolDeliveryService with ChangeNotifier {
     double? longitude,
   }) async {
     try {
+      // استخدام الـ endpoint الصحيح من التوثيق
       final uri = Uri.parse(
-          '${AppConfig.apiBaseUrl}/api/warehouses/qr/scan/');
+          '${AppConfig.apiBaseUrl}/api/warehouses/mobile/unified-scan/');
 
-      final body = {
-        'token': token,
+      // تجهيز الـ body حسب التوثيق
+      final body = <String, dynamic>{
+        'qr_token': token, // التوثيق يستخدم qr_token
+        'recipient_name': recipientName ?? 'مستلم',
       };
 
-      if (recipientName != null) body['recipient_name'] = recipientName;
-      if (notes != null) body['notes'] = notes;
-      if (latitude != null && longitude != null) {
-        body['latitude'] = latitude.toString();
-        body['longitude'] = longitude.toString();
+      // إضافة الحقول الاختيارية
+      if (notes != null && notes.isNotEmpty) body['notes'] = notes;
+      if (latitude != null) body['latitude'] = latitude;
+      if (longitude != null) body['longitude'] = longitude;
+
+      if (kDebugMode) {
+        print('🔍 QR Scan Request to: $uri');
+        print('📤 Body: ${jsonEncode(body)}');
       }
 
       final response = await http.post(
@@ -221,26 +227,85 @@ class SchoolDeliveryService with ChangeNotifier {
       ).timeout(Duration(seconds: 15));
 
       if (kDebugMode) {
-        print('Unified QR Scan Response: ${response.statusCode}');
-        print('Body: ${response.body}');
+        print('📥 Response Status: ${response.statusCode}');
+        print('📥 Response Body: ${response.body}');
       }
 
       final data = jsonDecode(utf8.decode(response.bodyBytes));
-      final qrResponse = QrScanResponse.fromJson(data);
 
-      if (qrResponse.success) {
-        // تحديث القوائم
-        await fetchIncomingDeliveries();
+      // معالجة الاستجابة حسب التوثيق
+      if (response.statusCode == 200) {
+        return QrScanResponse(
+          success: data['success'] ?? true,
+          message: data['message'] ?? 'تم تأكيد التسليم بنجاح',
+          shipment: data['shipment'] != null 
+              ? ApiShipment.fromJson(data['shipment'])
+              : null,
+          deliveryDetails: data['delivery_details'],
+        );
+      } else {
+        // معالجة الأخطاء حسب التوثيق
+        return QrScanResponse(
+          success: false,
+          error: data['error'] ?? 'فشل في مسح الرمز',
+          reason: _determineErrorReason(data),
+        );
       }
-
-      return qrResponse;
+    } on SocketException {
+      return QrScanResponse(
+        success: false,
+        error: 'لا يوجد اتصال بالإنترنت',
+      );
+    } on TimeoutException {
+      return QrScanResponse(
+        success: false,
+        error: 'انتهى وقت الاتصال بالخادم',
+      );
     } catch (e) {
-      if (kDebugMode) print('Error unified QR scan: $e');
+      if (kDebugMode) print('❌ Error unified QR scan: $e');
       return QrScanResponse(
         success: false,
         error: 'حدث خطأ: ${e.toString()}',
       );
     }
+  }
+
+  /// تحديد سبب الخطأ من الاستجابة
+  String? _determineErrorReason(Map<String, dynamic> data) {
+    final error = data['error']?.toString().toLowerCase() ?? '';
+    
+    if (error.contains('منتهي') || error.contains('expired')) {
+      return 'expired';
+    } else if (error.contains('مستخدم') || error.contains('already')) {
+      return 'already_used';
+    } else if (error.contains('غير صحيح') || error.contains('invalid')) {
+      return 'invalid';
+    } else if (error.contains('غير مسندة') || error.contains('not assigned')) {
+      return 'not_assigned';
+    } else if (error.contains('مسلمة') || error.contains('delivered')) {
+      return 'already_delivered';
+    }
+    
+    return null;
+  }
+
+  /// استخراج Token من نص QR Code الممسوح
+  static String? extractQrToken(String scannedText) {
+    // Format: SHIPMENT:<token>:<shipment_id>
+    if (scannedText.startsWith('SHIPMENT:')) {
+      List<String> parts = scannedText.split(':');
+      if (parts.length >= 2) {
+        return parts[1]; // هذا هو الـ token
+      }
+    }
+    
+    // إذا كان النص هو Token مباشرة (UUID format)
+    if (RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
+        .hasMatch(scannedText)) {
+      return scannedText;
+    }
+    
+    return null;
   }
 
   /// 5. التحقق من QR Code (بدون تأكيد)

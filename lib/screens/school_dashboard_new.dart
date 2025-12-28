@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/api_shipment_model.dart';
@@ -5,9 +6,8 @@ import '../services/auth_service.dart';
 import '../services/school_delivery_service.dart';
 import '../utils/constants.dart';
 import '../widgets/custom_drawer.dart';
-import 'qr_scanner_screen.dart';
 
-/// لوحة تحكم المدرسة المحدثة - متوافقة مع API
+/// تقارير الشحنات للمدرسة - عرض فقط
 class SchoolDashboardNew extends StatefulWidget {
   @override
   _SchoolDashboardNewState createState() => _SchoolDashboardNewState();
@@ -41,9 +41,7 @@ class _SchoolDashboardNewState extends State<SchoolDashboardNew> {
         backgroundColor: Colors.white,
         appBar: AppBar(
           title: Text(
-            authService.currentUser?.schoolName ??
-                authService.currentUser?.fullName ??
-                'المدرسة',
+            'تقارير الشحنات - ${authService.currentUser?.schoolName ?? 'المدرسة'}',
             style: TextStyle(color: Colors.black, fontSize: 18),
           ),
           backgroundColor: Colors.white,
@@ -71,10 +69,6 @@ class _SchoolDashboardNewState extends State<SchoolDashboardNew> {
                 ),
               ),
             IconButton(
-              icon: Icon(Icons.qr_code_scanner),
-              onPressed: () => _navigateToQrScanner(context),
-            ),
-            IconButton(
               icon: Icon(Icons.refresh),
               onPressed: _refreshData,
             ),
@@ -96,7 +90,7 @@ class _SchoolDashboardNewState extends State<SchoolDashboardNew> {
             ],
           ),
         ),
-        drawer: CustomDrawer(currentScreen: 'home'),
+        drawer: CustomDrawer(currentScreen: 'shipment_reports'),
         body: deliveryService.isLoading
             ? Center(child: CircularProgressIndicator())
             : TabBarView(
@@ -105,12 +99,6 @@ class _SchoolDashboardNewState extends State<SchoolDashboardNew> {
                   _buildReceivedTab(deliveryService.receivedDeliveries),
                 ],
               ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _navigateToQrScanner(context),
-          icon: Icon(Icons.qr_code_scanner),
-          label: Text('استلام شحنة'),
-          backgroundColor: AppColors.schoolColor,
-        ),
       ),
     );
   }
@@ -252,33 +240,48 @@ class _SchoolDashboardNewState extends State<SchoolDashboardNew> {
                   ),
               ],
 
-              // أزرار الإجراءات
-              if (!isReceived &&
-                  (shipment.status == 'out_for_delivery' ||
-                      shipment.status == 'assigned')) ...[
+              // عرض QR Code إذا كان موجود
+              if (!isReceived && shipment.qrCodeImage != null) ...[
                 SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _receiveWithQr(shipment),
-                        icon: Icon(Icons.qr_code_scanner, size: 18),
-                        label: Text('استلام بـ QR'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.successColor,
+                Divider(),
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'كود الاستلام - للمندوب فقط',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[700],
                         ),
                       ),
-                    ),
-                    SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: () => _receiveManually(shipment),
-                      icon: Icon(Icons.check, size: 18),
-                      label: Text('يدوي'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                      SizedBox(height: 8),
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Image.memory(
+                          base64Decode(shipment.qrCodeImage!),
+                          width: 150,
+                          height: 150,
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 8),
+                      Text(
+                        'المندوب سيقوم بمسح هذا الكود عند التسليم',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ],
@@ -432,111 +435,6 @@ class _SchoolDashboardNewState extends State<SchoolDashboardNew> {
         ],
       ),
     );
-  }
-
-  void _receiveWithQr(ApiShipment shipment) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => QrScannerScreen()),
-    ).then((_) => _refreshData());
-  }
-
-  void _receiveManually(ApiShipment shipment) {
-    final _nameController = TextEditingController();
-    final _notesController = TextEditingController();
-    String _condition = 'good';
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('استلام يدوي'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'اسم المستلم',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: _condition,
-                decoration: InputDecoration(
-                  labelText: 'حالة الشحنة',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem(value: 'good', child: Text('جيدة')),
-                  DropdownMenuItem(value: 'damaged', child: Text('تالفة')),
-                  DropdownMenuItem(value: 'partial', child: Text('جزئية')),
-                ],
-                onChanged: (value) => _condition = value!,
-              ),
-              SizedBox(height: 12),
-              TextField(
-                controller: _notesController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'ملاحظات',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('إلغاء'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (_nameController.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('الرجاء إدخال اسم المستلم')),
-                );
-                return;
-              }
-
-              Navigator.pop(context);
-
-              final deliveryService =
-                  Provider.of<SchoolDeliveryService>(context, listen: false);
-
-              final result = await deliveryService.receiveShipmentManually(
-                shipmentId: shipment.id,
-                receiverName: _nameController.text,
-                receiverNotes: _notesController.text,
-                deliveryCondition: _condition,
-              );
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['message']),
-                  backgroundColor:
-                      result['success'] ? Colors.green : Colors.red,
-                ),
-              );
-
-              if (result['success']) {
-                _refreshData();
-              }
-            },
-            child: Text('تأكيد'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _navigateToQrScanner(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => QrScannerScreen()),
-    ).then((_) => _refreshData());
   }
 
   String _formatDate(DateTime date) {

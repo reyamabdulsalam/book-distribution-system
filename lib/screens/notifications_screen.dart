@@ -32,30 +32,31 @@ class NotificationsScreen extends StatelessWidget {
           final notification = userNotifications[index];
           return Card(
             margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            elevation: notification.isRead ? 1 : 3,
-            color: notification.isRead ? Colors.white : appBarColor.withOpacity(0.05),
+            elevation: notification.read ? 1 : 3,
+            color: notification.read ? Colors.white : appBarColor.withOpacity(0.05),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
-                color: notification.isRead ? Colors.grey.shade200 : appBarColor.withOpacity(0.3),
+                color: notification.read ? Colors.grey.shade200 : appBarColor.withOpacity(0.3),
                 width: 1,
               ),
             ),
             child: ListTile(
-              leading: Icon(Icons.notifications, color: notification.isRead ? Colors.grey : appBarColor),
-              title: Text(notification.title),
+              leading: Icon(Icons.notifications, color: notification.read ? Colors.grey : appBarColor),
+              title: Text(notification.message),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(notification.message),
+                  if (notification.type != null)
+                    Text('النوع: ${notification.type}'),
                   SizedBox(height: 4),
                   Text(
-                    '${notification.date.day}/${notification.date.month}/${notification.date.year} ${notification.date.hour}:${notification.date.minute}',
+                    '${notification.createdAt.day}/${notification.createdAt.month}/${notification.createdAt.year} ${notification.createdAt.hour}:${notification.createdAt.minute.toString().padLeft(2, '0')}',
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),
-              trailing: !notification.isRead
+              trailing: !notification.read
                   ? IconButton(
                 icon: Icon(Icons.mark_email_read, color: appBarColor),
                 onPressed: () {

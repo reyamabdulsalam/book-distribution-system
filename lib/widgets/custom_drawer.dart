@@ -5,6 +5,9 @@ import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../utils/constants.dart';
 import '../screens/notifications_screen.dart';
+import '../screens/school_dashboard_new.dart';
+import '../screens/school_home_screen.dart';
+import '../screens/school_order_screen.dart';
 
 class CustomDrawer extends StatelessWidget {
   final String currentScreen;
@@ -16,7 +19,7 @@ class CustomDrawer extends StatelessWidget {
     final authService = Provider.of<AuthService>(context, listen: false);
     final notificationService = Provider.of<NotificationService>(context);
     final user = authService.currentUser;
-    final unreadCount = notificationService.getUnreadCount(user?.id.toString() ?? '0');
+    final unreadCount = notificationService.unreadCount;
 
     return Drawer(
       child: Column(
@@ -47,8 +50,44 @@ class CustomDrawer extends StatelessWidget {
                   isSelected: currentScreen == 'home',
                   onTap: () {
                     Navigator.pop(context);
+                    if (currentScreen != 'home') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => SchoolHomeScreen()),
+                      );
+                    }
                   },
                 ),
+                // إظهار خيار إنشاء طلب للمدارس فقط
+                if (user?.role == 'school_staff' || user?.role == 'school')
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.add_box,
+                    title: 'إنشاء طلب كتب',
+                    isSelected: currentScreen == 'create_order',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => SchoolOrderScreen()),
+                      );
+                    },
+                  ),
+                // إظهار خيار تقارير الشحنات للمدارس فقط
+                if (user?.role == 'school_staff' || user?.role == 'school')
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.local_shipping,
+                    title: 'تقارير الشحنات',
+                    isSelected: currentScreen == 'shipment_reports',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => SchoolDashboardNew()),
+                      );
+                    },
+                  ),
                 _buildDrawerItem(
                   context,
                   icon: Icons.notifications,

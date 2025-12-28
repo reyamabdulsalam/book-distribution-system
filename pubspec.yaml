@@ -17,6 +17,7 @@ dependencies:
   
   # مكتبات إضافية للـ API الجديد
   qr_flutter: ^4.1.0  # لعرض QR codes
+  mobile_scanner: ^3.5.7  # لمسح QR codes بالكاميرا
   image_picker: ^1.0.7  # لالتقاط الصور
   geolocator: ^10.1.0  # لتحديد الموقع GPS
   permission_handler: ^11.2.0  # لإدارة الصلاحيات

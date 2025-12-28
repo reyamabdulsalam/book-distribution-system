@@ -5,6 +5,7 @@ import '../services/order_service.dart';
 import '../models/book_model.dart';
 import '../models/school_request_model.dart';
 import '../utils/constants.dart';
+import '../widgets/custom_drawer.dart';
 
 class SchoolOrderScreen extends StatefulWidget {
   @override
@@ -14,6 +15,8 @@ class SchoolOrderScreen extends StatefulWidget {
 class _SchoolOrderScreenState extends State<SchoolOrderScreen> {
   final List<Book> _selectedBooks = [];
   final _formKey = GlobalKey<FormState>();
+  // الفصل الدراسي المختار (افتراضي: الفصل الأول)
+  String _selectedSemester = 'first'; // values: 'first', 'second'
 
   // القائمة المتاحة للمواد بعد فلترتها بحسب الصف
   late List<String> _availableSubjects;
@@ -130,22 +133,51 @@ class _SchoolOrderScreenState extends State<SchoolOrderScreen> {
     _availableSubjects = List<String>.from(_subjects);
   }
 
+  // دالة لتحويل term إلى نص عربي
+  String _getSemesterText(String term) {
+    return term == 'first' ? 'الفصل الأول' : 'الفصل الثاني';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('طلب كتب جديدة', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(
+          authService.currentUser?.schoolName ?? 'طلب كتب جديدة',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         elevation: 1,
         iconTheme: IconThemeData(color: Colors.black),
       ),
+      drawer: CustomDrawer(currentScreen: 'home'),
       body: Padding(
         padding: EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
+              // Dropdown لاختيار الفصل الدراسي
+              DropdownButtonFormField<String>(
+                value: _selectedSemester,
+                decoration: InputDecoration(
+                  labelText: 'اختر الفصل الدراسي',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'first', child: Text('الفصل الأول')),
+                  DropdownMenuItem(value: 'second', child: Text('الفصل الثاني')),
+                ],
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedSemester = newValue ?? 'first';
+                  });
+                },
+              ),
+              SizedBox(height: 16),
               // Dropdown لاختيار الصف (يظهر أولاً حتى تتحدد المواد المتاحة)
               DropdownButtonFormField<String>(
                 value: _selectedGrade,
@@ -271,7 +303,10 @@ class _SchoolOrderScreenState extends State<SchoolOrderScreen> {
                     return Card(
                       child: ListTile(
                         title: Text(book.title),
-                        subtitle: Text('الصف: ${book.grade} - الكمية: ${book.quantity}'),
+                        subtitle: Text(
+                          'الصف: ${book.grade}\n'
+                          'الكمية: ${book.quantity} - ${_getSemesterText(_selectedSemester)}'
+                        ),
                         trailing: IconButton(
                           icon: Icon(Icons.delete, color: Colors.red),
                           onPressed: () => _removeBook(index),
@@ -378,6 +413,7 @@ class _SchoolOrderScreenState extends State<SchoolOrderScreen> {
           bookTitle: book.title,
           grade: book.grade,
           quantity: book.quantity,
+          term: _selectedSemester,
         );
       }).toList(),
       requestDate: DateTime.now(),

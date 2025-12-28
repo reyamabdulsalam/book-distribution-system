@@ -62,19 +62,28 @@ class OrderService with ChangeNotifier {
     }
   }
 
-  /// إنشاء طلب جديد
+  /// إنشاء طلب جديد باستخدام Flutter Endpoint
   Future<SchoolRequest?> createSchoolRequest(SchoolRequest request) async {
     try {
-      final requestJson = request.toJson();
+      // تحويل البيانات إلى الصيغة الجديدة
+      final requestData = {
+        'school_id': request.schoolId,
+        'items': request.items.map((item) => {
+          'subject_name': item.bookTitle ?? item.subject ?? '',
+          'grade_name': item.grade ?? '',
+          'term_number': item.term == 'first' ? 1 : 2,
+          'quantity': item.quantity,
+        }).toList(),
+      };
       
       if (kDebugMode) {
         print('==================== Creating School Request ====================');
-        print('API Endpoint: ${AppConfig.apiBaseUrl}/api/school-requests/');
-        print('Request data: ${jsonEncode(requestJson)}');
+        print('API Endpoint: ${AppConfig.apiBaseUrl}/api/school-requests/create_from_flutter/');
+        print('Request data: ${jsonEncode(requestData)}');
         print('Access Token exists: ${ApiClient.accessToken != null}');
       }
       
-      final response = await ApiClient.post('/api/school-requests/', requestJson);
+      final response = await ApiClient.post('/api/school-requests/create_from_flutter/', requestData);
       
       if (kDebugMode) {
         print('==================== Response ====================');
@@ -131,6 +140,76 @@ class OrderService with ChangeNotifier {
       if (kDebugMode) print('OrderService.updateRequestStatus error: $e');
     }
     return false;
+  }
+
+  /// إرسال الطلب (Submit)
+  Future<bool> submitRequest(int requestId) async {
+    try {
+      final response = await ApiClient.post(
+        '/api/school-requests/$requestId/submit/',
+        {},
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final updatedRequest = SchoolRequest.fromJson(data);
+        
+        final index = _requests.indexWhere((r) => r.id == requestId);
+        if (index != -1) {
+          _requests[index] = updatedRequest;
+          _convertRequestsToOrders();
+          notifyListeners();
+        }
+        if (kDebugMode) print('✅ Request submitted successfully');
+        return true;
+      }
+    } catch (e) {
+      if (kDebugMode) print('❌ OrderService.submitRequest error: $e');
+    }
+    return false;
+  }
+
+  /// إلغاء الطلب (Cancel)
+  Future<bool> cancelRequest(int requestId) async {
+    try {
+      final response = await ApiClient.post(
+        '/api/school-requests/$requestId/cancel/',
+        {},
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final updatedRequest = SchoolRequest.fromJson(data);
+        
+        final index = _requests.indexWhere((r) => r.id == requestId);
+        if (index != -1) {
+          _requests[index] = updatedRequest;
+          _convertRequestsToOrders();
+          notifyListeners();
+        }
+        if (kDebugMode) print('✅ Request cancelled successfully');
+        return true;
+      }
+    } catch (e) {
+      if (kDebugMode) print('❌ OrderService.cancelRequest error: $e');
+    }
+    return false;
+  }
+
+  /// جلب إحصائيات الطلبات
+  Future<Map<String, dynamic>?> fetchRequestStats() async {
+    try {
+      final response = await ApiClient.get('/api/school-requests/stats/');
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (kDebugMode) print('📊 Request stats: $data');
+        return data;
+      }
+    } catch (e) {
+      if (kDebugMode) print('❌ OrderService.fetchRequestStats error: $e');
+    }
+    return null;
   }
 
   /// تحويل SchoolRequest إلى Order للتوافقية مع الكود القديم

@@ -63,15 +63,25 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       final authService = Provider.of<AuthService>(context, listen: false);
       final position = await _getCurrentLocation();
 
+      // استخراج Token من QR Code المُمسوح
+      final scannedText = _qrController.text.trim();
+      final qrToken = SchoolDeliveryService.extractQrToken(scannedText);
+
+      if (qrToken == null) {
+        _showErrorDialog('رمز QR غير صالح\n\nالرجاء مسح الرمز بشكل صحيح', 'invalid');
+        setState(() => _isProcessing = false);
+        return;
+      }
+
       // استخدام API الموحد لمسح QR
       final schoolService =
           Provider.of<SchoolDeliveryService>(context, listen: false);
 
       final result = await schoolService.scanQrCodeUnified(
-        token: _qrController.text.trim(),
+        token: qrToken, // استخدام Token المستخرج
         recipientName: _recipientNameController.text.isNotEmpty
             ? _recipientNameController.text
-            : authService.currentUser?.fullName,
+            : authService.currentUser?.fullName ?? 'مستلم',
         notes: _notesController.text,
         latitude: position?.latitude,
         longitude: position?.longitude,
@@ -99,7 +109,19 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                 if (result.shipment != null) ...[
                   Text('رقم الشحنة: ${result.shipment!.trackingCode}',
                       style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('المدرسة: ${result.shipment!.toSchoolName ?? "-"}'),
+                  Text('الحالة: ${result.shipment!.status}'),
+                  if (result.shipment!.toSchoolName != null)
+                    Text('المدرسة: ${result.shipment!.toSchoolName}'),
+                ],
+                if (result.deliveryDetails != null) ...[
+                  SizedBox(height: 8),
+                  Divider(),
+                  Text('تفاصيل التسليم:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  if (result.deliveryDetails!['recipient_name'] != null)
+                    Text('المستلم: ${result.deliveryDetails!['recipient_name']}'),
+                  if (result.deliveryDetails!['delivered_at'] != null)
+                    Text('الوقت: ${result.deliveryDetails!['delivered_at']}'),
                 ],
               ],
             ),
@@ -130,20 +152,31 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     IconData icon = Icons.error;
     Color color = Colors.red;
 
+    // معالجة الأخطاء حسب التوثيق
     if (reason != null) {
       switch (reason) {
         case 'expired':
-          detailedMessage = 'الرمز منتهي الصلاحية\n\nالرجاء طلب رمز جديد';
+          detailedMessage = '⏱️ رمز QR منتهي الصلاحية\n\nالصلاحية: 72 ساعة\nالرجاء طلب رمز جديد';
           icon = Icons.access_time;
           color = Colors.orange;
           break;
         case 'already_used':
-          detailedMessage = 'تم استخدام هذا الرمز مسبقاً';
-          icon = Icons.warning;
+          detailedMessage = '⚠️ تم استخدام هذا الرمز مسبقاً\n\nQR Code يُستخدم مرة واحدة فقط';
+          icon = Icons.warning_amber;
+          color = Colors.orange;
           break;
         case 'invalid':
-          detailedMessage = 'الرمز غير صالح\n\nالرجاء التحقق من الرمز';
+          detailedMessage = '❌ الرمز غير صالح\n\nالرجاء التحقق من الرمز والمحاولة مرة أخرى';
           icon = Icons.cancel;
+          break;
+        case 'not_assigned':
+          detailedMessage = '🚫 هذه الشحنة غير مسندة لك\n\nتواصل مع الإدارة';
+          icon = Icons.block;
+          break;
+        case 'already_delivered':
+          detailedMessage = '✅ تم تسليم هذه الشحنة مسبقاً';
+          icon = Icons.check_circle;
+          color = Colors.blue;
           break;
       }
     }

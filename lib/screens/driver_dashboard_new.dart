@@ -6,7 +6,7 @@ import '../services/shipment_service.dart';
 import '../utils/constants.dart';
 import '../widgets/custom_drawer.dart';
 import 'shipment_detail_screen.dart';
-import 'qr_scanner_screen.dart';
+import 'driver_qr_scanner_screen.dart';
 
 /// لوحة تحكم المندوب المحدثة - متوافقة مع API
 class DriverDashboardNew extends StatefulWidget {
@@ -90,6 +90,12 @@ class _DriverDashboardNewState extends State<DriverDashboardNew> {
                   _buildPerformanceTab(shipmentService.performance),
                 ],
               ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _navigateToQrScanner(context),
+          icon: Icon(Icons.qr_code_scanner),
+          label: Text('مسح كود التسليم'),
+          backgroundColor: AppColors.courierColor,
+        ),
       ),
     );
   }
@@ -435,8 +441,8 @@ class _DriverDashboardNewState extends State<DriverDashboardNew> {
   void _navigateToQrScanner(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => QrScannerScreen()),
-    );
+      MaterialPageRoute(builder: (context) => DriverQrScannerScreen()),
+    ).then((_) => _refreshData());
   }
 
   String _formatDate(DateTime date) {

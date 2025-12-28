@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
-import 'screens/school_dashboard_new.dart';
+import 'screens/school_home_screen.dart';
 import 'screens/driver_dashboard_new.dart';
 import 'services/auth_service.dart';
 import 'services/order_service.dart';
@@ -23,11 +23,7 @@ void main() {
           return service;
         }),
         ChangeNotifierProvider(create: (_) => CourierService()),
-        ChangeNotifierProvider(create: (_) {
-          final service = NotificationService();
-          service.addSampleNotifications();
-          return service;
-        }),
+        ChangeNotifierProvider(create: (_) => NotificationService()),
         // الخدمات الجديدة المتوافقة مع API
         ChangeNotifierProvider(create: (_) => ShipmentService()),
         ChangeNotifierProvider(create: (_) => SchoolDeliveryService()),
@@ -74,7 +70,7 @@ class MyApp extends StatelessWidget {
             
             // استخدام الشاشات الجديدة المتوافقة مع API
             if (role == 'school_staff' || role == 'school') {
-              return SchoolDashboardNew();
+              return SchoolHomeScreen(); // الواجهة الرئيسية: لوحة التحكم مع إحصائيات
             } else if (role == 'ministry_driver' || role == 'province_driver' || role == 'courier') {
               return DriverDashboardNew();
             } else {

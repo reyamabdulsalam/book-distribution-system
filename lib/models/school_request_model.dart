@@ -159,4 +159,8 @@ class SchoolRequestItem {
       'term': term,
     };
   }
+
+  String get termInArabic {
+    return term == 'first' ? 'الفصل الأول' : 'الفصل الثاني';
+  }
 }

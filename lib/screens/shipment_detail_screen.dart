@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../models/api_shipment_model.dart';
 import '../services/shipment_service.dart';
 import '../utils/constants.dart';
+import 'driver_qr_scanner_screen.dart';
 
 /// شاشة تفاصيل الشحنة للمندوب
 class ShipmentDetailScreen extends StatefulWidget {
@@ -32,38 +32,14 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
     super.dispose();
   }
 
-  Future<Position> _getCurrentLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw Exception('خدمات الموقع معطلة');
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        throw Exception('تم رفض صلاحيات الموقع');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      throw Exception('صلاحيات الموقع مرفوضة بشكل دائم');
-    }
-
-    return await Geolocator.getCurrentPosition();
-  }
-
   Future<void> _startDelivery() async {
     setState(() => _isProcessing = true);
 
     try {
-      final position = await _getCurrentLocation();
       final shipmentService = Provider.of<ShipmentService>(context, listen: false);
       
       final success = await shipmentService.startDelivery(
         widget.shipment.id,
-        position.latitude,
-        position.longitude,
       );
 
       if (success) {
@@ -129,15 +105,12 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
     setState(() => _isProcessing = true);
 
     try {
-      final position = await _getCurrentLocation();
       final shipmentService = Provider.of<ShipmentService>(context, listen: false);
 
       final result = await shipmentService.completeDelivery(
         shipmentId: widget.shipment.id,
-        recipientName: _recipientNameController.text,
+        receivedBy: _recipientNameController.text,
         deliveryNotes: _notesController.text,
-        latitude: position.latitude,
-        longitude: position.longitude,
       );
 
       if (result['success']) {
@@ -251,6 +224,30 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
               style: TextStyle(
                 color: widget.shipment.isQrValid ? Colors.green : Colors.red,
                 fontSize: 12,
+              ),
+            ),
+            SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DriverQrScannerScreen(
+                        shipmentId: widget.shipment.id,
+                      ),
+                    ),
+                  );
+                  if (result == true) {
+                    Navigator.pop(context);
+                  }
+                },
+                icon: Icon(Icons.qr_code_scanner),
+                label: Text('مسح رمز QR'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                ),
               ),
             ),
           ],

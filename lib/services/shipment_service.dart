@@ -22,14 +22,23 @@ class ShipmentService with ChangeNotifier {
   String? get error => _error;
 
   /// 1. جلب الشحنات النشطة للمندوب
-  Future<bool> fetchActiveShipments() async {
+  Future<bool> fetchActiveShipments({int? driverId, String status = 'pending'}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final uri = Uri.parse(
-          '${AppConfig.apiBaseUrl}/api/warehouses/mobile/driver/shipments/active/');
+      // بناء query parameters
+      final queryParams = <String, String>{
+        'status': status,
+      };
+      
+      if (driverId != null) {
+        queryParams['assigned_driver'] = driverId.toString();
+      }
+
+      final uri = Uri.parse('${AppConfig.apiBaseUrl}/api/warehouses/shipments/')
+          .replace(queryParameters: queryParams);
 
       final response = await http.get(
         uri,
@@ -103,22 +112,19 @@ class ShipmentService with ChangeNotifier {
   }
 
   /// 3. بدء التوصيل
-  Future<bool> startDelivery(int shipmentId, double latitude, double longitude) async {
+  Future<bool> startDelivery(int shipmentId) async {
     try {
       final uri = Uri.parse(
-          '${AppConfig.apiBaseUrl}/api/warehouses/mobile/driver/shipments/$shipmentId/start/');
+          '${AppConfig.apiBaseUrl}/api/warehouses/shipments/$shipmentId/start_delivery/');
 
       final response = await http.post(
         uri,
         headers: ApiClient.defaultHeaders(),
-        body: jsonEncode({
-          'latitude': latitude,
-          'longitude': longitude,
-        }),
+        body: jsonEncode({}),
       ).timeout(Duration(seconds: 15));
 
       if (kDebugMode) {
-        print('Start Delivery Response: ${response.statusCode}');
+        print('✅ Start Delivery Response: ${response.statusCode}');
         print('Body: ${response.body}');
       }
 
@@ -128,7 +134,7 @@ class ShipmentService with ChangeNotifier {
         return true;
       }
     } catch (e) {
-      if (kDebugMode) print('Error starting delivery: $e');
+      if (kDebugMode) print('❌ Error starting delivery: $e');
     }
     return false;
   }
@@ -137,7 +143,7 @@ class ShipmentService with ChangeNotifier {
   Future<bool> updateLocation(int shipmentId, double latitude, double longitude) async {
     try {
       final uri = Uri.parse(
-          '${AppConfig.apiBaseUrl}/api/warehouses/mobile/driver/shipments/$shipmentId/location/');
+          '${AppConfig.apiBaseUrl}/api/warehouses/shipments/$shipmentId/update_location/');
 
       final response = await http.post(
         uri,
@@ -148,9 +154,13 @@ class ShipmentService with ChangeNotifier {
         }),
       ).timeout(Duration(seconds: 10));
 
+      if (kDebugMode && response.statusCode == 200) {
+        print('📍 Location updated successfully');
+      }
+
       return response.statusCode == 200;
     } catch (e) {
-      if (kDebugMode) print('Error updating location: $e');
+      if (kDebugMode) print('❌ Error updating location: $e');
       return false;
     }
   }
@@ -201,31 +211,77 @@ class ShipmentService with ChangeNotifier {
     }
   }
 
-  /// 7. إكمال التوصيل
-  Future<Map<String, dynamic>> completeDelivery({
+  /// 6.5 التحقق من رمز QR
+  Future<Map<String, dynamic>> verifyQR({
     required int shipmentId,
-    required String recipientName,
-    String? deliveryNotes,
-    required double latitude,
-    required double longitude,
+    required String qrCode,
   }) async {
     try {
       final uri = Uri.parse(
-          '${AppConfig.apiBaseUrl}/api/warehouses/mobile/driver/shipments/$shipmentId/complete/');
+          '${AppConfig.apiBaseUrl}/api/warehouses/shipments/$shipmentId/verify_qr/');
 
       final response = await http.post(
         uri,
         headers: ApiClient.defaultHeaders(),
         body: jsonEncode({
-          'recipient_name': recipientName,
-          'delivery_notes': deliveryNotes ?? '',
-          'latitude': latitude,
-          'longitude': longitude,
+          'qr_code': qrCode,
         }),
       ).timeout(Duration(seconds: 15));
 
       if (kDebugMode) {
-        print('Complete Delivery Response: ${response.statusCode}');
+        print('✅ Verify QR Response: ${response.statusCode}');
+        print('Body: ${response.body}');
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        return {
+          'success': true,
+          'message': data['message'] ?? 'تم التحقق من رمز QR بنجاح',
+          'data': data,
+        };
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': error['error'] ?? 'فشل التحقق من رمز QR',
+        };
+      }
+    } catch (e) {
+      if (kDebugMode) print('❌ Error verifying QR: $e');
+      return {
+        'success': false,
+        'message': 'حدث خطأ: ${e.toString()}',
+      };
+    }
+  }
+
+  /// 7. إكمال التوصيل
+  Future<Map<String, dynamic>> completeDelivery({
+    required int shipmentId,
+    required String receivedBy,
+    String? deliveryNotes,
+  }) async {
+    try {
+      final uri = Uri.parse(
+          '${AppConfig.apiBaseUrl}/api/warehouses/shipments/$shipmentId/complete_delivery/');
+
+      final requestBody = {
+        'received_by': receivedBy,
+      };
+      
+      if (deliveryNotes != null && deliveryNotes.isNotEmpty) {
+        requestBody['delivery_notes'] = deliveryNotes;
+      }
+
+      final response = await http.post(
+        uri,
+        headers: ApiClient.defaultHeaders(),
+        body: jsonEncode(requestBody),
+      ).timeout(Duration(seconds: 15));
+
+      if (kDebugMode) {
+        print('✅ Complete Delivery Response: ${response.statusCode}');
         print('Body: ${response.body}');
       }
 
@@ -248,7 +304,7 @@ class ShipmentService with ChangeNotifier {
         };
       }
     } catch (e) {
-      if (kDebugMode) print('Error completing delivery: $e');
+      if (kDebugMode) print('❌ Error completing delivery: $e');
       return {
         'success': false,
         'message': 'حدث خطأ: ${e.toString()}',

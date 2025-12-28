@@ -6,13 +6,20 @@ class ApiShipment {
   final String? toProvinceName;
   final String? toSchoolName;
   final String status;
+  final String? statusDisplay;
   final List<ShipmentBook> books;
   final String? qrCodeImage; // base64 image
+  final String? qrToken; // QR token for scanning
   final DateTime? qrExpiresAt;
+  final String? qrStatus; // active, expired, used
+  final bool? qrUsed;
   final DateTime createdAt;
+  final DateTime? updatedAt;
   final DateTime? startedDeliveryAt;
   final DateTime? deliveredAt;
   final String? assignedCourierName;
+  final int? assignedCourierId;
+  final String? courierPhone;
   final String? recipientName;
   final String? deliveryNotes;
   final double? latitude;
@@ -27,13 +34,20 @@ class ApiShipment {
     this.toProvinceName,
     this.toSchoolName,
     required this.status,
+    this.statusDisplay,
     required this.books,
     this.qrCodeImage,
+    this.qrToken,
     this.qrExpiresAt,
+    this.qrStatus,
+    this.qrUsed,
     required this.createdAt,
+    this.updatedAt,
     this.startedDeliveryAt,
     this.deliveredAt,
     this.assignedCourierName,
+    this.assignedCourierId,
+    this.courierPhone,
     this.recipientName,
     this.deliveryNotes,
     this.latitude,
@@ -43,6 +57,15 @@ class ApiShipment {
   });
 
   factory ApiShipment.fromJson(Map<String, dynamic> json) {
+    // Parse QR code object if exists
+    final qrCode = json['qr_code'] as Map<String, dynamic>?;
+    // Parse courier object if exists
+    final courier = json['courier'] as Map<String, dynamic>?;
+    // Parse delivery_info object if exists
+    final deliveryInfo = json['delivery_info'] as Map<String, dynamic>?;
+    // Parse timestamps object if exists
+    final timestamps = json['timestamps'] as Map<String, dynamic>?;
+    
     return ApiShipment(
       id: json['id'],
       trackingCode: json['tracking_code'] ?? '',
@@ -50,24 +73,35 @@ class ApiShipment {
       toProvinceName: json['to_province_name'],
       toSchoolName: json['to_school_name'],
       status: json['status'] ?? 'pending',
+      statusDisplay: json['status_display'],
       books: (json['books'] as List?)
               ?.map((b) => ShipmentBook.fromJson(b))
               .toList() ??
           [],
-      qrCodeImage: json['qr_code_image'],
-      qrExpiresAt: json['qr_expires_at'] != null
-          ? DateTime.parse(json['qr_expires_at'])
+      qrCodeImage: qrCode?['image'],
+      qrToken: qrCode?['token'],
+      qrExpiresAt: qrCode?['expires_at'] != null
+          ? DateTime.parse(qrCode!['expires_at'])
           : null,
-      createdAt: DateTime.parse(json['created_at']),
+      qrStatus: qrCode?['status'],
+      qrUsed: qrCode?['used'],
+      createdAt: timestamps?['created_at'] != null 
+          ? DateTime.parse(timestamps!['created_at'])
+          : DateTime.parse(json['created_at']),
+      updatedAt: timestamps?['updated_at'] != null
+          ? DateTime.parse(timestamps!['updated_at'])
+          : (json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null),
       startedDeliveryAt: json['started_delivery_at'] != null
           ? DateTime.parse(json['started_delivery_at'])
           : null,
-      deliveredAt: json['delivered_at'] != null
-          ? DateTime.parse(json['delivered_at'])
-          : null,
-      assignedCourierName: json['assigned_courier_name'],
-      recipientName: json['recipient_name'],
-      deliveryNotes: json['delivery_notes'],
+      deliveredAt: deliveryInfo?['delivered_at'] != null
+          ? DateTime.parse(deliveryInfo!['delivered_at'])
+          : (json['delivered_at'] != null ? DateTime.parse(json['delivered_at']) : null),
+      assignedCourierName: courier?['name'] ?? json['assigned_courier_name'],
+      assignedCourierId: courier?['id'],
+      courierPhone: courier?['phone'],
+      recipientName: deliveryInfo?['recipient_name'] ?? json['recipient_name'],
+      deliveryNotes: deliveryInfo?['notes'] ?? json['delivery_notes'],
       latitude: json['latitude']?.toDouble(),
       longitude: json['longitude']?.toDouble(),
       proofPhotoUrl: json['proof_photo_url'],
@@ -193,12 +227,13 @@ class ShipmentListResponse {
 }
 
 /// استجابة API لمسح QR
+/// استجابة API لمسح QR Code - متوافقة مع توثيق Backend
 class QrScanResponse {
   final bool success;
   final String? message;
   final String? error;
   final ApiShipment? shipment;
-  final DateTime? scannedAt;
+  final Map<String, dynamic>? deliveryDetails;
   final String? reason;
 
   QrScanResponse({
@@ -206,7 +241,7 @@ class QrScanResponse {
     this.message,
     this.error,
     this.shipment,
-    this.scannedAt,
+    this.deliveryDetails,
     this.reason,
   });
 
@@ -218,9 +253,7 @@ class QrScanResponse {
       shipment: json['shipment'] != null
           ? ApiShipment.fromJson(json['shipment'])
           : null,
-      scannedAt: json['scanned_at'] != null
-          ? DateTime.parse(json['scanned_at'])
-          : null,
+      deliveryDetails: json['delivery_details'],
       reason: json['reason'],
     );
   }
