@@ -23,8 +23,14 @@ class _DriverDashboardNewState extends State<DriverDashboardNew> {
 
   Future<void> _loadData() async {
     final shipmentService = Provider.of<ShipmentService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    // الحصول على courier ID و role من المستخدم الحالي
+    final courierId = authService.currentUser?.id;
+    final courierRole = authService.currentUser?.role; // مثال: ministry_courier أو province_courier
+
     await Future.wait([
-      shipmentService.fetchActiveShipments(),
+      shipmentService.fetchActiveShipments(courierId: courierId, courierRole: courierRole),
       shipmentService.fetchShipmentHistory(),
       shipmentService.fetchPerformance(),
     ]);

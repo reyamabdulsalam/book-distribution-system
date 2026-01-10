@@ -78,28 +78,46 @@ class AuthService with ChangeNotifier {
           notifyListeners();
           return true;
         } else {
-          // استخراج user_id من JWT token كـ fallback
+          // استخراج بيانات المستخدم من JWT token كـ fallback
           int? userId;
+          String? role;
+          String? fullName;
+          int? schoolId;
+          
           if (accessToken != null) {
             final jwtData = _decodeJWT(accessToken.toString());
-            if (jwtData != null && jwtData.containsKey('user_id')) {
+            if (jwtData != null) {
               userId = jwtData['user_id'] is int 
                   ? jwtData['user_id'] 
                   : int.tryParse(jwtData['user_id'].toString());
-              if (kDebugMode) print('Extracted user_id from JWT: $userId');
+              role = jwtData['role']?.toString();
+              fullName = jwtData['full_name']?.toString() ?? jwtData['name']?.toString();
+              schoolId = jwtData['school_id'] is int
+                  ? jwtData['school_id']
+                  : int.tryParse(jwtData['school_id']?.toString() ?? '');
+              
+              if (kDebugMode) {
+                print('Extracted from JWT:');
+                print('  user_id: $userId');
+                print('  role: $role');
+                print('  full_name: $fullName');
+                print('  school_id: $schoolId');
+              }
             }
           }
 
-          // إنشاء user object بسيط
+          // إنشاء user object من بيانات JWT
           _currentUser = User(
             id: userId ?? 0,
             username: username,
-            fullName: username,
-            role: 'school_staff', // افتراضي
+            fullName: fullName ?? username,
+            role: role ?? 'school_staff',
+            schoolId: schoolId?.toString(),
           );
           
           if (kDebugMode) {
-            print('Login successful with basic user data');
+            print('Login successful with JWT data');
+            print('User Role: ${_currentUser?.role}');
           }
           
           notifyListeners();
@@ -123,13 +141,6 @@ class AuthService with ChangeNotifier {
     }
 
     return false;
-  }
-
-  /// تسجيل خروج
-  void logout() {
-    _currentUser = null;
-    ApiClient.clearTokens();
-    notifyListeners();
   }
 
   /// تسجيل دخول محلي للاختبار فقط (يُحذف في الإنتاج)
@@ -182,5 +193,13 @@ class AuthService with ChangeNotifier {
     }
 
     return false;
+  }
+
+  /// تسجيل الخروج
+  void logout() {
+    _currentUser = null;
+    ApiClient.clearTokens();
+    notifyListeners();
+    if (kDebugMode) print('✅ User logged out successfully');
   }
 }

@@ -8,6 +8,7 @@ import '../screens/notifications_screen.dart';
 import '../screens/school_dashboard_new.dart';
 import '../screens/school_home_screen.dart';
 import '../screens/school_order_screen.dart';
+import '../screens/login_screen.dart';
 
 class CustomDrawer extends StatelessWidget {
   final String currentScreen;
@@ -334,8 +335,13 @@ class CustomDrawer extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(context); // إغلاق الديالوج
               authService.logout();
+              // إزالة جميع الشاشات والعودة لـ LoginScreen
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+                (route) => false,
+              );
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: Text('تسجيل الخروج'),

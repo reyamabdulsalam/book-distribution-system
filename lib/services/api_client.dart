@@ -58,15 +58,37 @@ class ApiClient {
   /// دالة مساعدة لإرسال GET مع معالجة 401
   static Future<http.Response> get(String endpoint) async {
     final uri = Uri.parse('${AppConfig.apiBaseUrl}$endpoint');
+    
+    if (kDebugMode) {
+      print('🔵 GET Request to: $uri');
+      print('🔵 Headers: ${defaultHeaders()}');
+    }
+    
     var response = await http.get(uri, headers: defaultHeaders());
+
+    if (kDebugMode) {
+      print('🔵 GET Response Status: ${response.statusCode}');
+      if (response.statusCode >= 400) {
+        print('❌ Error Response Body: ${response.body}');
+      }
+    }
 
     // إذا كان 401، حاول تحديث التوكن وإعادة المحاولة
     if (response.statusCode == 401) {
+      if (kDebugMode) print('⚠️ 401 Unauthorized - Refreshing token...');
       final refreshed = await refreshAccessToken();
       if (refreshed) {
+        if (kDebugMode) print('✅ Token refreshed, retrying GET...');
         response = await http.get(uri, headers: defaultHeaders());
+        if (kDebugMode) {
+          print('🔵 Retry GET Status: ${response.statusCode}');
+          if (response.statusCode >= 400) {
+            print('❌ Retry Error Body: ${response.body}');
+          }
+        }
       }
     }
+    
     return response;
   }
 

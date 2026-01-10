@@ -36,22 +36,15 @@ class _DriverQrScannerScreenState extends State<DriverQrScannerScreen> {
     try {
       final shipmentService = Provider.of<ShipmentService>(context, listen: false);
 
-      // إذا كان shipmentId معروف، استخدمه
-      if (widget.shipmentId != null) {
-        final result = await shipmentService.verifyQR(
-          shipmentId: widget.shipmentId!,
-          qrCode: qrCode,
-        );
+      final result = await shipmentService.verifyQR(
+        qrCode: qrCode,
+        shipmentId: widget.shipmentId,
+      );
 
-        if (result['success']) {
-          _showSuccessDialog(result['message'] ?? 'تم التحقق بنجاح');
-        } else {
-          _showErrorDialog(result['message'] ?? 'فشل التحقق من QR');
-        }
+      if (result['success']) {
+        _showSuccessDialog(result['message'] ?? 'تم التحقق بنجاح');
       } else {
-        // إذا لم يكن معروف، يمكن استخراج shipmentId من QR code
-        // أو عرض رسالة للمستخدم
-        _showErrorDialog('الرجاء تحديد الشحنة أولاً');
+        _showErrorDialog(result['message'] ?? 'فشل التحقق من QR');
       }
     } catch (e) {
       _showErrorDialog('حدث خطأ: ${e.toString()}');

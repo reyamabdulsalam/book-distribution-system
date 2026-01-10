@@ -95,22 +95,23 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
   }
 
   Future<void> _completeDelivery() async {
-    if (_recipientNameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('الرجاء إدخال اسم المستلم'), backgroundColor: Colors.orange),
-      );
-      return;
-    }
-
     setState(() => _isProcessing = true);
 
     try {
       final shipmentService = Provider.of<ShipmentService>(context, listen: false);
 
+      // دمج اسم المستلم داخل الملاحظات إذا وُجد
+      String? notes;
+      if (_notesController.text.isNotEmpty || _recipientNameController.text.isNotEmpty) {
+        notes = [
+          if (_recipientNameController.text.isNotEmpty) 'المستلم: ${_recipientNameController.text}',
+          if (_notesController.text.isNotEmpty) _notesController.text,
+        ].join('\n');
+      }
+
       final result = await shipmentService.completeDelivery(
         shipmentId: widget.shipment.id,
-        receivedBy: _recipientNameController.text,
-        deliveryNotes: _notesController.text,
+        notes: notes,
       );
 
       if (result['success']) {

@@ -9,6 +9,7 @@ import 'services/courier_service.dart';
 import 'services/notification_service.dart';
 import 'services/shipment_service.dart';
 import 'services/school_delivery_service.dart';
+import 'services/grade_service.dart';
 
 void main() {
   runApp(
@@ -27,6 +28,7 @@ void main() {
         // الخدمات الجديدة المتوافقة مع API
         ChangeNotifierProvider(create: (_) => ShipmentService()),
         ChangeNotifierProvider(create: (_) => SchoolDeliveryService()),
+        ChangeNotifierProvider(create: (_) => GradeService()),
       ],
       child: MyApp(),
     ),

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/order_service.dart';
+import '../services/grade_service.dart';
 import '../models/book_model.dart';
 import '../models/school_request_model.dart';
+import '../models/grade_model.dart';
 import '../utils/constants.dart';
 import '../widgets/custom_drawer.dart';
 
@@ -18,119 +20,58 @@ class _SchoolOrderScreenState extends State<SchoolOrderScreen> {
   // الفصل الدراسي المختار (افتراضي: الفصل الأول)
   String _selectedSemester = 'first'; // values: 'first', 'second'
 
-  // القائمة المتاحة للمواد بعد فلترتها بحسب الصف
-  late List<String> _availableSubjects;
-
-  // خريطة تحدد المواد المسموح بها لكل صف
-  final Map<String, List<String>> _allowedSubjectsByGrade = {
-    // ابتدائي
-    'أول ابتدائي': [
-      'القرآن الكريم', 'التربية الإسلامية', 'اللغة العربية', 'العلوم', 'الرياضيات'
-    ],
-    'ثاني ابتدائي': [
-      'القرآن الكريم', 'التربية الإسلامية', 'اللغة العربية', 'العلوم', 'الرياضيات'
-    ],
-    'ثالث ابتدائي': [
-      'القرآن الكريم', 'التربية الإسلامية', 'اللغة العربية', 'العلوم', 'الرياضيات'
-    ],
-
-    // رابع-خامس-سادس
-    'رابع أساسي': [
-      'القرآن الكريم', 'التربية الإسلامية', 'اللغة العربية', 'العلوم', 'الرياضيات', 'الإجتماعيات'
-    ],
-    'خامس أساسي': [
-      'القرآن الكريم', 'التربية الإسلامية', 'اللغة العربية', 'العلوم', 'الرياضيات', 'الإجتماعيات'
-    ],
-    'سادس أساسي': [
-      'القرآن الكريم', 'التربية الإسلامية', 'اللغة العربية', 'العلوم', 'الرياضيات', 'الإجتماعيات'
-    ],
-
-    // سابع-ثامن-تاسع
-    'سابع أساسي': [
-      'القرآن الكريم', 'التربية الإسلامية', 'اللغة العربية', 'اللغة الإنجليزية', 'العلوم', 'الرياضيات', 'الجغرافيا', 'التاريخ', 'التربية الوطنية'
-    ],
-    'ثامن أساسي': [
-      'القرآن الكريم', 'التربية الإسلامية', 'اللغة العربية', 'اللغة الإنجليزية', 'العلوم', 'الرياضيات', 'الجغرافيا', 'التاريخ', 'التربية الوطنية'
-    ],
-    'تاسع أساسي': [
-      'القرآن الكريم', 'التربية الإسلامية', 'اللغة العربية', 'اللغة الإنجليزية', 'العلوم', 'الرياضيات', 'الجغرافيا', 'التاريخ', 'التربية الوطنية'
-    ],
-
-    // أول ثانوي
-    'أول ثانوي': [
-      'الإيمان', 'الحديث و الفقه', 'السيرة النبوية', 'القرآن الكريم', 'اللغة الإنجليزية', 'الرياضيات', 'الجغرافيا', 'التاريخ', 'المجتمع', 'الكيمياء', 'الفيزياء', 'الأحياء', 'البلاغة و النقد', 'النحو و الصرف', 'القراءة'
-    ],
-
-    // ثاني/ثالث ثانوي (علمي)
-    'ثاني ثانوي(علمي)': [
-      'القرآن الكريم', 'اللغة الإنجليزية', 'الرياضيات', 'الكيمياء', 'الفيزياء', 'الأحياء', 'البلاغة و النقد', 'النحو و الصرف', 'القراءة', 'الإيمان', 'الحديث و الفقه', 'السيرة النبوية'
-    ],
-    'ثالث ثانوي(علمي)': [
-      'القرآن الكريم', 'اللغة الإنجليزية', 'الرياضيات', 'الكيمياء', 'الفيزياء', 'الأحياء', 'البلاغة و النقد', 'النحو و الصرف', 'القراءة', 'الإيمان', 'الحديث و الفقه', 'السيرة النبوية'
-    ],
-
-    // ثاني/ثالث ثانوي (أدبي)
-    'ثاني ثانوي(أدبي)': [
-      'القرآن الكريم', 'اللغة الإنجليزية', 'الرياضيات', 'الجغرافيا', 'التاريخ', 'المجتمع', 'الإحصاء', 'البلاغة و النقد', 'النحو و الصرف', 'القراءة', 'علم النفس', 'الإيمان', 'الحديث و الفقه', 'السيرة النبوية'
-    ],
-    'ثالث ثانوي(أدبي)': [
-      'القرآن الكريم', 'اللغة الإنجليزية', 'الرياضيات', 'الجغرافيا', 'التاريخ', 'المجتمع', 'الإحصاء', 'البلاغة و النقد', 'النحو و الصرف', 'القراءة', 'علم النفس', 'الإيمان', 'الحديث و الفقه', 'السيرة النبوية'
-    ],
-  };
-
-  // قائمة المواد الدراسية
-  final List<String> _subjects = [
-    'القرآن الكريم',
-    'التربية الإسلامية',
-    'اللغة العربية',
-    'اللغة الإنجليزية',
-    'العلوم',
-    'الرياضيات',
-    'الإجتماعيات',
-    'الجغرافيا',
-    'التاريخ',
-    'التربية الوطنية',
-    'المجتمع',
-    'الكيمياء',
-    'الفيزياء',
-    'الأحياء',
-    'الإحصاء',
-    'البلاغة و النقد',
-    'النحو و الصرف',
-    'القراءة',
-    'علم النفس',
-    'الإيمان',
-    'الحديث و الفقه',
-    'السيرة النبوية'
-  ];
-
-  // قائمة الصفوف الدراسية
-  final List<String> _grades = [
-    'أول ابتدائي',
-    'ثاني ابتدائي',
-    'ثالث ابتدائي',
-    'رابع أساسي',
-    'خامس أساسي',
-    'سادس أساسي',
-    'سابع أساسي',
-    'ثامن أساسي',
-    'تاسع أساسي',
-    'أول ثانوي',
-    'ثاني ثانوي(علمي)',
-    'ثالث ثانوي(علمي)',
-    'ثاني ثانوي(أدبي)',
-    'ثالث ثانوي(أدبي)'
-  ];
+  // القوائم الديناميكية من API
+  List<Grade> _grades = [];
+  List<Subject> _availableSubjects = [];
+  bool _isLoadingGrades = false;
+  bool _isLoadingSubjects = false;
 
   // المتغيرات لتخزين القيم المختارة
-  String? _selectedSubject;
-  String? _selectedGrade;
+  Grade? _selectedGrade;
+  Subject? _selectedSubject;
   final TextEditingController _quantityController = TextEditingController(text: '0');
 
   @override
   void initState() {
     super.initState();
-    _availableSubjects = List<String>.from(_subjects);
+    _loadGrades();
+  }
+
+  // جلب الصفوف من API
+  Future<void> _loadGrades() async {
+    setState(() => _isLoadingGrades = true);
+    
+    final gradeService = Provider.of<GradeService>(context, listen: false);
+    final success = await gradeService.fetchGrades();
+    
+    if (success) {
+      setState(() {
+        _grades = gradeService.grades;
+        _isLoadingGrades = false;
+      });
+    } else {
+      setState(() => _isLoadingGrades = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('فشل في جلب الصفوف الدراسية'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // جلب المواد لصف معين
+  Future<void> _loadSubjectsForGrade(int gradeId) async {
+    setState(() => _isLoadingSubjects = true);
+    
+    final gradeService = Provider.of<GradeService>(context, listen: false);
+    final subjects = await gradeService.fetchSubjectsByGrade(gradeId);
+    
+    setState(() {
+      _availableSubjects = subjects;
+      _selectedSubject = null; // إعادة تعيين المادة المختارة
+      _isLoadingSubjects = false;
+    });
   }
 
   // دالة لتحويل term إلى نص عربي
@@ -179,74 +120,72 @@ class _SchoolOrderScreenState extends State<SchoolOrderScreen> {
               ),
               SizedBox(height: 16),
               // Dropdown لاختيار الصف (يظهر أولاً حتى تتحدد المواد المتاحة)
-              DropdownButtonFormField<String>(
-                value: _selectedGrade,
-                decoration: InputDecoration(
-                  labelText: 'اختر الصف',
-                  border: OutlineInputBorder(),
-                ),
-                items: _grades.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedGrade = newValue;
-                    // فلترة المواد حسب الصف المختار
-                    if (newValue != null && _allowedSubjectsByGrade.containsKey(newValue)) {
-                      _availableSubjects = List<String>.from(_allowedSubjectsByGrade[newValue]!);
-                    } else {
-                      _availableSubjects = List<String>.from(_subjects);
-                    }
-                    // إعادة تعيين المادة المختارة عند تغيير الصف
-                    _selectedSubject = null;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'يرجى اختيار الصف';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-
-              // Dropdown لاختيار المادة (تُفلتر حسب الصف)
-              DropdownButtonFormField<String>(
-                value: _selectedSubject,
-                decoration: InputDecoration(
-                  labelText: 'اختر المادة',
-                  border: OutlineInputBorder(),
-                ),
-                // إذا لم يُختر صف بعد فنجعل القائمة معطلة
-                items: (_selectedGrade == null)
-                    ? <DropdownMenuItem<String>>[]
-                    : _availableSubjects.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
+              _isLoadingGrades
+                  ? Center(child: CircularProgressIndicator())
+                  : DropdownButtonFormField<Grade>(
+                      value: _selectedGrade,
+                      decoration: InputDecoration(
+                        labelText: 'اختر الصف',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _grades.map((Grade grade) {
+                        return DropdownMenuItem<Grade>(
+                          value: grade,
+                          child: Text(grade.name),
                         );
                       }).toList(),
-                onChanged: (_selectedGrade == null)
-                    ? null
-                    : (String? newValue) {
+                      onChanged: (Grade? newValue) {
                         setState(() {
-                          _selectedSubject = newValue;
+                          _selectedGrade = newValue;
+                          _selectedSubject = null;
+                          _availableSubjects = [];
                         });
+                        if (newValue != null) {
+                          _loadSubjectsForGrade(newValue.id);
+                        }
                       },
-                validator: (value) {
-                  // نطلب اختيار المادة فقط إذا كان الصف محددًا
-                  if (_selectedGrade != null) {
-                    if (value == null || value.isEmpty) {
-                      return 'يرجى اختيار المادة';
-                    }
-                  }
-                  return null;
-                },
-                hint: (_selectedGrade == null) ? Text('اختر الصف أولاً') : null,
-              ),
+                      validator: (value) {
+                        if (value == null) {
+                          return 'يرجى اختيار الصف';
+                        }
+                        return null;
+                      },
+                    ),
+              SizedBox(height: 16),
+
+              // Dropdown لاختيار المادة (يظهر بعد اختيار الصف)
+              _isLoadingSubjects
+                  ? Center(child: CircularProgressIndicator())
+                  : DropdownButtonFormField<Subject>(
+                      value: _selectedSubject,
+                      decoration: InputDecoration(
+                        labelText: 'اختر المادة',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _availableSubjects.map((Subject subject) {
+                        return DropdownMenuItem<Subject>(
+                          value: subject,
+                          child: Text(subject.name),
+                        );
+                      }).toList(),
+                      onChanged: (_selectedGrade == null)
+                          ? null
+                          : (Subject? newValue) {
+                              setState(() {
+                                _selectedSubject = newValue;
+                              });
+                            },
+                      validator: (value) {
+                        // نطلب اختيار المادة فقط إذا كان الصف محددًا
+                        if (_selectedGrade != null) {
+                          if (value == null) {
+                            return 'يرجى اختيار المادة';
+                          }
+                        }
+                        return null;
+                      },
+                      hint: (_selectedGrade == null) ? Text('اختر الصف أولاً') : null,
+                    ),
               SizedBox(height: 16),
 
               // حقل إدخال الكمية
@@ -342,15 +281,15 @@ class _SchoolOrderScreenState extends State<SchoolOrderScreen> {
         setState(() {
           _selectedBooks.add(Book(
             id: 'book_${DateTime.now().millisecondsSinceEpoch}',
-            title: _selectedSubject!,
-            grade: _selectedGrade!,
+            title: _selectedSubject!.name,
+            grade: _selectedGrade!.name,
             quantity: quantity,
           ));
 
           // إعادة تعيين الحقول
           _selectedSubject = null;
-          _selectedGrade = null;
           _quantityController.text = '0';
+          // لا نعيد تعيين الصف للسماح بإضافة مواد متعددة لنفس الصف
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
