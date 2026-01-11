@@ -30,7 +30,12 @@ class _DriverDashboardNewState extends State<DriverDashboardNew> {
     final courierRole = authService.currentUser?.role; // مثال: ministry_courier أو province_courier
 
     await Future.wait([
-      shipmentService.fetchActiveShipments(courierId: courierId, courierRole: courierRole),
+      // طلب كل الشحنات الخاصة بالمندوب من الباك-إند بدون حصر حالة واحدة
+      shipmentService.fetchActiveShipments(
+        courierId: courierId,
+        courierRole: courierRole,
+        status: null,
+      ),
       shipmentService.fetchShipmentHistory(),
       shipmentService.fetchPerformance(),
     ]);

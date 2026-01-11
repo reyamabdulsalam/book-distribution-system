@@ -27,111 +27,80 @@ class AuthService with ChangeNotifier {
     }
   }
 
-  /// تسجيل الدخول عبر Backend - متوافق مع API الجديد
+  /// تسجيل الدخول عبر Backend - يحاول أكثر من endpoint لتوافق الـ Backend
   Future<bool> login(String username, String password) async {
-    // تجربة الـ endpoint الجديد أولاً
-    final uri = Uri.parse('${AppConfig.apiBaseUrl}/api/users/login/');
-    try {
-      if (kDebugMode) {
-        print('Attempting login to: $uri');
-      }
-      
-      final resp = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': username, 'password': password}),
-      ).timeout(Duration(seconds: 15));
+    // ترتيب المحاولة: /api/users/login/ ثم /api/auth/login/ ثم /api/token/
+    final endpoints = <String>[
+      '/api/users/login/',
+      '/api/auth/login/',
+      '/api/token/',
+    ];
 
-      if (kDebugMode) {
-        print('Login response status: ${resp.statusCode}');
-        print('Login response body: ${resp.body}');
-      }
-
-      if (resp.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>;
-        
-        // حفظ التوكنات
-        final accessToken = data['access'] ?? data['token'];
-        final refreshToken = data['refresh'];
-        
-        if (accessToken != null && accessToken.toString().isNotEmpty) {
-          ApiClient.setTokens(
-            access: accessToken.toString(), 
-            refresh: refreshToken?.toString()
-          );
+    for (final path in endpoints) {
+      final uri = Uri.parse('${AppConfig.apiBaseUrl}$path');
+      try {
+        if (kDebugMode) {
+          print('Attempting login to: $uri');
         }
 
-        // استخراج بيانات المستخدم من الاستجابة
-        if (data.containsKey('user') && data['user'] != null) {
-          final userJson = data['user'] as Map<String, dynamic>;
-          _currentUser = User.fromJson(userJson);
-          
-          if (kDebugMode) {
-            print('Login successful.');
-            print('User ID: ${_currentUser?.id}');
-            print('Username: ${_currentUser?.username}');
-            print('Full Name: ${_currentUser?.fullName}');
-            print('Role: ${_currentUser?.role}');
-            print('School ID: ${_currentUser?.schoolId}');
+        final resp = await http.post(
+          uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'username': username, 'password': password}),
+        ).timeout(Duration(seconds: 15));
+
+        if (kDebugMode) {
+          print('Login response status: ${resp.statusCode}');
+          print('Login response body: ${resp.body}');
+        }
+
+        if (resp.statusCode == 200) {
+            final data = jsonDecode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>;
+
+            // دعم مفاتيح توكن متعددة حسب الباك-إند
+            final accessToken =
+              data['access'] ?? data['token'] ?? data['access_token'] ?? data['auth_token'] ?? data['key'];
+            final refreshToken = data['refresh'] ?? data['refresh_token'];
+
+          if (accessToken != null && accessToken.toString().isNotEmpty) {
+            ApiClient.setTokens(
+              access: accessToken.toString(),
+              refresh: refreshToken?.toString(),
+            );
           }
-          
-          notifyListeners();
-          return true;
-        } else {
-          // استخراج بيانات المستخدم من JWT token كـ fallback
-          int? userId;
-          String? role;
-          String? fullName;
-          int? schoolId;
-          
+
+          // إذا أعاد الـ Backend كائن user مباشرة
+          // أحياناً تكون بيانات المستخدم داخل data أو result
+          final userJson = (data['user'] ?? data['data'] ?? data['result']);
+          if (userJson is Map<String, dynamic>) {
+            _currentUser = User.fromJson(userJson);
+            _logUser();
+            notifyListeners();
+            return true;
+          }
+
+          // محاولة استخراج بيانات من الـ JWT عند عدم وجود user
           if (accessToken != null) {
             final jwtData = _decodeJWT(accessToken.toString());
             if (jwtData != null) {
-              userId = jwtData['user_id'] is int 
-                  ? jwtData['user_id'] 
-                  : int.tryParse(jwtData['user_id'].toString());
-              role = jwtData['role']?.toString();
-              fullName = jwtData['full_name']?.toString() ?? jwtData['name']?.toString();
-              schoolId = jwtData['school_id'] is int
-                  ? jwtData['school_id']
-                  : int.tryParse(jwtData['school_id']?.toString() ?? '');
-              
-              if (kDebugMode) {
-                print('Extracted from JWT:');
-                print('  user_id: $userId');
-                print('  role: $role');
-                print('  full_name: $fullName');
-                print('  school_id: $schoolId');
-              }
+              _currentUser = User(
+                id: _toInt(jwtData['user_id']) ?? 0,
+                username: username,
+                fullName: (jwtData['full_name'] ?? jwtData['name'] ?? username).toString(),
+                role: (jwtData['role'] ?? 'school_staff').toString(),
+                schoolId: _toInt(jwtData['school_id'])?.toString(),
+              );
+              _logUser(fromJwt: true);
+              notifyListeners();
+              return true;
             }
           }
-
-          // إنشاء user object من بيانات JWT
-          _currentUser = User(
-            id: userId ?? 0,
-            username: username,
-            fullName: fullName ?? username,
-            role: role ?? 'school_staff',
-            schoolId: schoolId?.toString(),
-          );
-          
-          if (kDebugMode) {
-            print('Login successful with JWT data');
-            print('User Role: ${_currentUser?.role}');
-          }
-          
-          notifyListeners();
-          return true;
         }
-      } else {
+      } catch (e, stackTrace) {
         if (kDebugMode) {
-          print('Login failed: ${resp.statusCode} - ${resp.body}');
+          print('AuthService login error on $path: $e');
+          print('Stack trace: $stackTrace');
         }
-      }
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        print('AuthService login error: $e');
-        print('Stack trace: $stackTrace');
       }
     }
 
@@ -140,7 +109,26 @@ class AuthService with ChangeNotifier {
       return true;
     }
 
+    if (kDebugMode) {
+      print('All login endpoints failed for user: $username');
+    }
     return false;
+  }
+
+  int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString());
+  }
+
+  void _logUser({bool fromJwt = false}) {
+    if (!kDebugMode) return;
+    print(fromJwt ? 'Login successful (from JWT data)' : 'Login successful.');
+    print('User ID: ${_currentUser?.id}');
+    print('Username: ${_currentUser?.username}');
+    print('Full Name: ${_currentUser?.fullName}');
+    print('Role: ${_currentUser?.role}');
+    print('School ID: ${_currentUser?.schoolId}');
   }
 
   /// تسجيل دخول محلي للاختبار فقط (يُحذف في الإنتاج)

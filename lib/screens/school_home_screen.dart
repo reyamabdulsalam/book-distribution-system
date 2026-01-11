@@ -26,12 +26,14 @@ class _SchoolHomeScreenState extends State<SchoolHomeScreen> {
   }
 
   Future<void> _loadData() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
     final deliveryService = Provider.of<SchoolDeliveryService>(context, listen: false);
     final orderService = Provider.of<OrderService>(context, listen: false);
+    final schoolId = int.tryParse(authService.currentUser?.schoolId ?? '');
     
     await Future.wait([
       deliveryService.fetchIncomingDeliveries(),
-      orderService.fetchOrders(),
+      if (schoolId != null) orderService.fetchSchoolRequests(schoolId),
     ]);
   }
 
