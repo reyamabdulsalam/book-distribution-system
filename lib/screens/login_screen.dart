@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -59,6 +60,14 @@ class _LoginScreenState extends State<LoginScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
+    } else {
+      // بعد تسجيل الدخول الناجح، حاول جلب الإشعارات فوراً
+      try {
+        final notificationService = Provider.of<NotificationService>(context, listen: false);
+        notificationService.fetchNotifications();
+      } catch (e) {
+        if (kDebugMode) print('Failed to fetch notifications after login: $e');
+      }
     }
   }
 

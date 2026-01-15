@@ -14,7 +14,7 @@ class ShipmentService with ChangeNotifier {
   DriverPerformance? _performance;
   bool _isLoading = false;
   String? _error;
-  String? _lastCourierRole; // لتحديد المسار الصحيح (وزارة -> محافظة أو محافظة -> مدرسة)
+  
 
   List<ApiShipment> get activeShipments => _activeShipments;
   List<ApiShipment> get historyShipments => _historyShipments;
@@ -30,8 +30,7 @@ class ShipmentService with ChangeNotifier {
     notifyListeners();
 
     try {
-      // حفظ الدور لاستخدامه في العمليات التالية
-      _lastCourierRole = courierRole;
+      // حفظ الدور لاستخدامه في العمليات التالية (محذوف حالياً لأنه غير مستخدم)
 
       // المسار الموحد لجلب شحنات المندوب - التفويض يتعامل مع الفلترة
       final uri = Uri.parse('${AppConfig.apiBaseUrl}/api/warehouses/mobile/driver/shipments/active/');

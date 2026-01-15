@@ -120,7 +120,8 @@ class AppConfig {
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     // Production backend (with explicit port) is the default; override via --dart-define as needed
-    defaultValue: 'http://45.77.65.134:8000',
+    // Backend host provided by the team; default without explicit port
+    defaultValue: 'http://45.77.65.134',
   );
 
 }

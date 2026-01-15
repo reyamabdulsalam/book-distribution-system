@@ -68,6 +68,9 @@ class MyApp extends StatelessWidget {
       home: Consumer<AuthService>(
         builder: (context, authService, child) {
           if (authService.currentUser != null) {
+            // عند وجود مستخدم مسجل الدخول، جلب الإشعارات مرة واحدة
+            final notificationService = Provider.of<NotificationService>(context, listen: false);
+            Future.microtask(() => notificationService.fetchNotifications());
             final role = authService.currentUser!.role;
             
             // استخدام الشاشات الجديدة المتوافقة مع API

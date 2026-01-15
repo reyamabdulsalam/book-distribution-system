@@ -72,16 +72,33 @@ class ApiShipment {
     final deliveryInfo = json['delivery_info'] as Map<String, dynamic>?;
     // Parse timestamps object if exists
     final timestamps = json['timestamps'] as Map<String, dynamic>?;
+
+    // Helper to extract a human-readable name from possibly nested 'from'/'to' objects
+    String? extractName(dynamic value, List<String> candidates) {
+      if (value == null) return null;
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        for (final key in candidates) {
+          if (value.containsKey(key) && value[key] != null) return value[key].toString();
+        }
+      }
+      return null;
+    }
+
+    // Try multiple locations where API might put origin/destination names
+    final dynamic fromObj = json['from'] ?? json['origin'] ?? json['source'];
+    final dynamic toObj = json['to'] ?? json['destination'] ?? json['to_location_obj'];
     
     return ApiShipment(
-      id: json['id'],
-      trackingCode: json['tracking_code'] ?? '',
-      type: json['type'] ?? json['shipment_type'],
-      fromMinistryName: json['from_ministry_name'],
-      fromLocation: json['from_location'] ?? json['from'],
-      toProvinceName: json['to_province_name'],
-      toSchoolName: json['to_school_name'],
-      toLocation: json['to_location'] ?? json['to'],
+        id: json['id'],
+        trackingCode: json['tracking_code'] ?? '',
+        type: json['type'] ?? json['shipment_type'],
+        fromMinistryName: json['from_ministry_name'] ??
+          extractName(fromObj, ['ministry_name', 'name', 'title', 'warehouse_name']),
+        fromLocation: json['from_location'] ?? extractName(fromObj, ['location', 'address', 'name', 'title']) ?? json['from'],
+        toProvinceName: json['to_province_name'] ?? extractName(toObj, ['province_name', 'province', 'name']),
+        toSchoolName: json['to_school_name'] ?? extractName(toObj, ['school_name', 'name', 'title']),
+        toLocation: json['to_location'] ?? extractName(toObj, ['location', 'address', 'name', 'title']) ?? json['to'],
       status: json['status'] ?? 'pending',
       statusDisplay: json['status_display'],
       books: (json['books'] as List?)
