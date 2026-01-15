@@ -29,11 +29,13 @@ class AuthService with ChangeNotifier {
 
   /// تسجيل الدخول عبر Backend - يحاول أكثر من endpoint لتوافق الـ Backend
   Future<bool> login(String username, String password) async {
-    // ترتيب المحاولة: /api/users/login/ ثم /api/auth/login/ ثم /api/token/
+    // ترتيب المحاولة يشمل المسارات المحتملة للباك-إند الجديد
     final endpoints = <String>[
       '/api/users/login/',
       '/api/auth/login/',
       '/api/token/',
+      '/api/warehouses/login/',
+      '/api/warehouses/mobile/login/',
     ];
 
     for (final path in endpoints) {
@@ -54,13 +56,14 @@ class AuthService with ChangeNotifier {
           print('Login response body: ${resp.body}');
         }
 
-        if (resp.statusCode == 200) {
+        if (resp.statusCode == 200 || resp.statusCode == 201) {
             final data = jsonDecode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>;
 
-            // دعم مفاتيح توكن متعددة حسب الباك-إند
-            final accessToken =
-              data['access'] ?? data['token'] ?? data['access_token'] ?? data['auth_token'] ?? data['key'];
-            final refreshToken = data['refresh'] ?? data['refresh_token'];
+            // دعم مفاتيح توكن متعددة حسب الباك-إند أو داخل حقول data/result
+            final normalized = _unwrapData(data);
+            final accessToken = normalized['access'] ?? normalized['token'] ??
+                normalized['access_token'] ?? normalized['auth_token'] ?? normalized['key'];
+            final refreshToken = normalized['refresh'] ?? normalized['refresh_token'];
 
           if (accessToken != null && accessToken.toString().isNotEmpty) {
             ApiClient.setTokens(
@@ -71,7 +74,7 @@ class AuthService with ChangeNotifier {
 
           // إذا أعاد الـ Backend كائن user مباشرة
           // أحياناً تكون بيانات المستخدم داخل data أو result
-          final userJson = (data['user'] ?? data['data'] ?? data['result']);
+          final userJson = (data['user'] ?? normalized['user']);
           if (userJson is Map<String, dynamic>) {
             _currentUser = User.fromJson(userJson);
             _logUser();
@@ -113,6 +116,17 @@ class AuthService with ChangeNotifier {
       print('All login endpoints failed for user: $username');
     }
     return false;
+  }
+
+  /// يفك التغليف إذا كان الرد على شكل {data: {...}} أو {result: {...}}
+  Map<String, dynamic> _unwrapData(Map<String, dynamic> data) {
+    if (data.containsKey('data') && data['data'] is Map<String, dynamic>) {
+      return {...data, ... (data['data'] as Map<String, dynamic>)};
+    }
+    if (data.containsKey('result') && data['result'] is Map<String, dynamic>) {
+      return {...data, ... (data['result'] as Map<String, dynamic>)};
+    }
+    return data;
   }
 
   int? _toInt(dynamic value) {

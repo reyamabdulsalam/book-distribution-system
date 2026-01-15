@@ -65,12 +65,12 @@ class OrderService with ChangeNotifier {
   /// إنشاء طلب جديد باستخدام Flutter Endpoint
   Future<SchoolRequest?> createSchoolRequest(SchoolRequest request) async {
     try {
-      // تحويل البيانات إلى الصيغة الجديدة
+      // تحويل البيانات إلى الصيغة الجديدة - استخدام IDs من Backend
       final requestData = {
         'school_id': request.schoolId,
         'items': request.items.map((item) => {
-          'subject_name': item.bookTitle ?? item.subject ?? '',
-          'grade_name': item.grade ?? '',
+          'subject_id': item.bookId, // subject_id من Backend
+          'grade_id': (request.items.indexOf(item) + 1), // سيتم تعديله لاحقاً
           'term_number': item.term == 'first' ? 1 : 2,
           'quantity': item.quantity,
         }).toList(),

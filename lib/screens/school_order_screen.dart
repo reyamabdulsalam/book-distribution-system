@@ -284,6 +284,8 @@ class _SchoolOrderScreenState extends State<SchoolOrderScreen> {
             title: _selectedSubject!.name,
             grade: _selectedGrade!.name,
             quantity: quantity,
+            subjectId: _selectedSubject!.id,
+            gradeId: _selectedGrade!.id,
           ));
 
           // إعادة تعيين الحقول
@@ -345,10 +347,10 @@ class _SchoolOrderScreenState extends State<SchoolOrderScreen> {
       schoolId: schoolId,
       status: 'submitted',
       items: _selectedBooks.asMap().entries.map((entry) {
-        final index = entry.key;
         final book = entry.value;
         return SchoolRequestItem(
-          bookId: index + 1, // استخدام index فريد لكل كتاب (1, 2, 3, ...)
+          subjectId: book.subjectId,
+          gradeId: book.gradeId,
           bookTitle: book.title,
           grade: book.grade,
           quantity: book.quantity,

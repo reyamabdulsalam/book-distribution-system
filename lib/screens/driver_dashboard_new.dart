@@ -18,7 +18,10 @@ class _DriverDashboardNewState extends State<DriverDashboardNew> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    // تأخير تحميل البيانات حتى بعد اكتمال البناء
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {

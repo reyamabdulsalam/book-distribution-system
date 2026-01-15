@@ -22,34 +22,19 @@ class ShipmentService with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// 1. جلب الشحنات النشطة للمندوب
+  /// 1. جلب الشحنات النشطة للمندوب من الـ Backend
+  /// GET /api/warehouses/mobile/driver/shipments/active/
   Future<bool> fetchActiveShipments({int? courierId, String? status, String? courierRole}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      // حفظ الدور لاستخدامه في العمليات التالية (start/confirm)
+      // حفظ الدور لاستخدامه في العمليات التالية
       _lastCourierRole = courierRole;
 
-      // بناء query parameters
-      final queryParams = <String, String>{};
-
-      if (status != null && status.isNotEmpty) {
-        queryParams['status'] = status; // allow fetching all statuses when null
-      }
-
-      if (courierId != null) {
-        queryParams['assigned_courier'] = courierId.toString();
-      }
-
-      if (courierRole != null && courierRole.isNotEmpty) {
-        queryParams['courier_role'] = courierRole;
-      }
-
-        final basePath = _resolveShipmentBasePath(courierRole);
-        final uri = Uri.parse('${AppConfig.apiBaseUrl}$basePath')
-          .replace(queryParameters: queryParams);
+      // المسار الموحد لجلب شحنات المندوب - التفويض يتعامل مع الفلترة
+      final uri = Uri.parse('${AppConfig.apiBaseUrl}/api/warehouses/mobile/driver/shipments/active/');
 
       if (kDebugMode) {
         print('🚚 Fetching active shipments...');
@@ -105,7 +90,8 @@ class ShipmentService with ChangeNotifier {
     return false;
   }
 
-  /// 2. جلب سجل الشحنات المكتملة
+  /// 2. جلب سجل الشحنات المكتملة (delivered/confirmed/canceled)
+  /// GET /api/warehouses/mobile/driver/shipments/history/
   Future<bool> fetchShipmentHistory() async {
     _isLoading = true;
     _error = null;
@@ -141,11 +127,11 @@ class ShipmentService with ChangeNotifier {
   }
 
   /// 3. بدء التوصيل
-  Future<bool> startDelivery(int shipmentId, {String? notes, String? courierRole}) async {
+  /// POST /api/warehouses/mobile/driver/shipments/{id}/start_delivery/
+  Future<bool> startDelivery(int shipmentId, {String? notes}) async {
     try {
-        final basePath = _resolveShipmentBasePath(courierRole ?? _lastCourierRole);
         final uri = Uri.parse(
-          '${AppConfig.apiBaseUrl}$basePath$shipmentId/start_delivery/');
+          '${AppConfig.apiBaseUrl}/api/warehouses/mobile/driver/shipments/$shipmentId/start_delivery/');
 
       final body = <String, dynamic>{};
       if (notes != null && notes.isNotEmpty) body['notes'] = notes;
@@ -295,17 +281,16 @@ class ShipmentService with ChangeNotifier {
   }
 
   /// 7. إكمال التوصيل (تأكيد التسليم)
+  /// POST /api/warehouses/mobile/driver/shipments/{id}/confirm_delivery/
   Future<Map<String, dynamic>> completeDelivery({
     required int shipmentId,
     String? notes,
     String? signatureBase64,
     String? photoBase64,
-    String? courierRole,
   }) async {
     try {
-      final basePath = _resolveShipmentBasePath(courierRole ?? _lastCourierRole);
       final uri = Uri.parse(
-          '${AppConfig.apiBaseUrl}$basePath$shipmentId/confirm_delivery/');
+          '${AppConfig.apiBaseUrl}/api/warehouses/mobile/driver/shipments/$shipmentId/confirm_delivery/');
 
       final requestBody = <String, dynamic>{};
       if (notes != null && notes.isNotEmpty) {
@@ -428,13 +413,5 @@ class ShipmentService with ChangeNotifier {
     notifyListeners();
   }
 
-  /// تحديد المسار وفق دور المندوب
-  String _resolveShipmentBasePath(String? courierRole) {
-    // Ministry → Province
-    if (courierRole != null && courierRole.toLowerCase().contains('ministry')) {
-      return '/api/warehouses/ministry-shipments/';
-    }
-    // Province → School (أو Courier عام)
-    return '/api/warehouses/school-shipments/';
-  }
+
 }

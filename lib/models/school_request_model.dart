@@ -119,6 +119,8 @@ class SchoolRequest {
 class SchoolRequestItem {
   final int? id;
   final int? bookId;
+  final int? subjectId;
+  final int? gradeId;
   final String? bookTitle;
   final String? subject;
   final String? grade;
@@ -128,6 +130,8 @@ class SchoolRequestItem {
   SchoolRequestItem({
     this.id,
     this.bookId,
+    this.subjectId,
+    this.gradeId,
     this.bookTitle,
     this.subject,
     this.grade,
@@ -139,6 +143,8 @@ class SchoolRequestItem {
     return SchoolRequestItem(
       id: json['id'],
       bookId: json['book'] is int ? json['book'] : (json['book_id']),
+      subjectId: json['subject_id'],
+      gradeId: json['grade_id'],
       bookTitle: json['book_title'] ?? json['title'] ?? 
                  (json['book_detail'] != null ? json['book_detail']['title'] : null),
       subject: json['subject'],
@@ -152,6 +158,8 @@ class SchoolRequestItem {
     return {
       if (id != null) 'id': id,
       if (bookId != null) 'book': bookId,
+      if (subjectId != null) 'subject_id': subjectId,
+      if (gradeId != null) 'grade_id': gradeId,
       if (bookTitle != null) 'book_title': bookTitle,
       if (subject != null) 'subject': subject,
       if (grade != null) 'grade': grade,

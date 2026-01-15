@@ -22,7 +22,10 @@ class _SchoolHomeScreenState extends State<SchoolHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    // تأخير تحميل البيانات حتى بعد اكتمال البناء
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {

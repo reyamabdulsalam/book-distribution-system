@@ -2,12 +2,16 @@
 class ApiShipment {
   final int id;
   final String trackingCode;
+  final String? type; // shipment_type: "province_to_school" أو "ministry_to_province"
   final String? fromMinistryName;
+  final String? fromLocation; // اسم مكان الإرسال (from)
   final String? toProvinceName;
   final String? toSchoolName;
+  final String? toLocation; // اسم مكان الوصول (to)
   final String status;
   final String? statusDisplay;
   final List<ShipmentBook> books;
+  final int? booksCountFromApi; // في حال أرسله الـ API مباشرة
   final String? qrCodeImage; // base64 image
   final String? qrToken; // QR token for scanning
   final DateTime? qrExpiresAt;
@@ -30,12 +34,16 @@ class ApiShipment {
   ApiShipment({
     required this.id,
     required this.trackingCode,
+    this.type,
     this.fromMinistryName,
+    this.fromLocation, // اسم مكان الإرسال (from)
     this.toProvinceName,
     this.toSchoolName,
+    this.toLocation, // اسم مكان الوصول (to)
     required this.status,
     this.statusDisplay,
     required this.books,
+    this.booksCountFromApi, // في حال أرسله الـ API مباشرة
     this.qrCodeImage,
     this.qrToken,
     this.qrExpiresAt,
@@ -55,7 +63,6 @@ class ApiShipment {
     this.proofPhotoUrl,
     this.signatureUrl,
   });
-
   factory ApiShipment.fromJson(Map<String, dynamic> json) {
     // Parse QR code object if exists
     final qrCode = json['qr_code'] as Map<String, dynamic>?;
@@ -69,34 +76,38 @@ class ApiShipment {
     return ApiShipment(
       id: json['id'],
       trackingCode: json['tracking_code'] ?? '',
+      type: json['type'] ?? json['shipment_type'],
       fromMinistryName: json['from_ministry_name'],
+      fromLocation: json['from_location'] ?? json['from'],
       toProvinceName: json['to_province_name'],
       toSchoolName: json['to_school_name'],
+      toLocation: json['to_location'] ?? json['to'],
       status: json['status'] ?? 'pending',
       statusDisplay: json['status_display'],
       books: (json['books'] as List?)
-              ?.map((b) => ShipmentBook.fromJson(b))
-              .toList() ??
-          [],
+          ?.map((b) => ShipmentBook.fromJson(b))
+          .toList() ??
+        [],
+      booksCountFromApi: json['books_count'],
       qrCodeImage: qrCode?['image'],
       qrToken: qrCode?['token'],
       qrExpiresAt: qrCode?['expires_at'] != null
-          ? DateTime.parse(qrCode!['expires_at'])
-          : null,
+        ? DateTime.parse(qrCode!['expires_at'])
+        : null,
       qrStatus: qrCode?['status'],
       qrUsed: qrCode?['used'],
       createdAt: timestamps?['created_at'] != null 
-          ? DateTime.parse(timestamps!['created_at'])
-          : DateTime.parse(json['created_at']),
+        ? DateTime.parse(timestamps!['created_at'])
+        : DateTime.parse(json['created_at']),
       updatedAt: timestamps?['updated_at'] != null
-          ? DateTime.parse(timestamps!['updated_at'])
-          : (json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null),
+        ? DateTime.parse(timestamps!['updated_at'])
+        : (json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null),
       startedDeliveryAt: json['started_delivery_at'] != null
-          ? DateTime.parse(json['started_delivery_at'])
-          : null,
+        ? DateTime.parse(json['started_delivery_at'])
+        : null,
       deliveredAt: deliveryInfo?['delivered_at'] != null
-          ? DateTime.parse(deliveryInfo!['delivered_at'])
-          : (json['delivered_at'] != null ? DateTime.parse(json['delivered_at']) : null),
+        ? DateTime.parse(deliveryInfo!['delivered_at'])
+        : (json['delivered_at'] != null ? DateTime.parse(json['delivered_at']) : null),
       assignedCourierName: courier?['name'] ?? json['assigned_courier_name'],
       assignedCourierId: courier?['id'],
       courierPhone: courier?['phone'],
@@ -141,13 +152,13 @@ class ApiShipment {
     }
   }
 
-  int get totalBooks {
-    return books.fold<int>(0, (sum, book) => sum + book.quantity);
-  }
-
   bool get isQrValid {
     if (qrExpiresAt == null) return false;
     return DateTime.now().isBefore(qrExpiresAt!);
+  }
+
+  int get totalBooks {
+    return booksCountFromApi ?? books.fold<int>(0, (sum, book) => sum + book.quantity);
   }
 
   bool get canStartDelivery {
@@ -161,18 +172,37 @@ class ApiShipment {
   bool get isDelivered {
     return status == 'delivered' || status == 'confirmed';
   }
+  
+  // تحديد نوع الشحنة بالعربي
+  String get typeInArabic {
+    if (type == null) return 'غير محدد';
+    switch (type) {
+      case 'province_to_school':
+        return 'محافظة → مدرسة';
+      case 'ministry_to_province':
+        return 'وزارة → محافظة';
+      default:
+        return type!;
+    }
+  }
 }
 
 /// نموذج كتاب في الشحنة
 class ShipmentBook {
   final int bookId;
   final String? bookName;
+  final String? bookTitle; // من الـ API الجديد
+  final String? bookSubject;
+  final String? bookGrade;
   final int quantity;
   final String term; // first, second
 
   ShipmentBook({
     required this.bookId,
     this.bookName,
+    this.bookTitle,
+    this.bookSubject,
+    this.bookGrade,
     required this.quantity,
     required this.term,
   });
@@ -180,7 +210,10 @@ class ShipmentBook {
   factory ShipmentBook.fromJson(Map<String, dynamic> json) {
     return ShipmentBook(
       bookId: json['book_id'],
-      bookName: json['book_name'],
+      bookName: json['book_name'] ?? json['book_title'],
+      bookTitle: json['book_title'],
+      bookSubject: json['book_subject'],
+      bookGrade: json['book_grade'],
       quantity: json['quantity'],
       term: json['term'] ?? 'first',
     );

@@ -19,17 +19,18 @@ class SchoolDeliveryService with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// 1. جلب الشحنات الواردة للمدرسة
+  /// 1. جلب الشحنات الواردة للمدرسة من الـ Backend
+  /// GET /api/warehouses/school/shipments/incoming/
   Future<bool> fetchIncomingDeliveries({String? status}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      var uri = Uri.parse(
-          '${AppConfig.apiBaseUrl}/api/warehouses/school/shipments/incoming/');
+      // المسار الموحد للشحنات الواردة للمدرسة
+      var uri = Uri.parse('${AppConfig.apiBaseUrl}/api/warehouses/school/shipments/incoming/');
 
-      if (status != null) {
+      if (status != null && status.isNotEmpty) {
         uri = uri.replace(queryParameters: {'status': status});
       }
 
@@ -45,14 +46,22 @@ class SchoolDeliveryService with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-        final shipmentResponse = ShipmentListResponse.fromJson(data);
         
-        // تصنيف الشحنات
+        // دعم هيكل الاستجابة الجديد (shipments مباشرة أو داخل data)
+        final shipmentsList = (data['shipments'] ?? data['results'] ?? data['data'] ?? []) as List;
+        final shipmentResponse = ShipmentListResponse(
+          count: data['count'] ?? shipmentsList.length,
+          results: shipmentsList.map((item) => ApiShipment.fromJson(item)).toList(),
+          next: data['next'],
+          previous: data['previous'],
+        );
+        
+        // تصنيف الشحنات (واردة وغير مستلمة vs مستلمة)
         _incomingDeliveries = shipmentResponse.results
-            .where((s) => !s.isDelivered)
+            .where((s) => !s.isDelivered && s.status != 'confirmed' && s.status != 'canceled')
             .toList();
         _receivedDeliveries = shipmentResponse.results
-            .where((s) => s.isDelivered)
+            .where((s) => s.isDelivered || s.status == 'confirmed')
             .toList();
         
         _isLoading = false;
@@ -78,6 +87,7 @@ class SchoolDeliveryService with ChangeNotifier {
   }
 
   /// 2. استلام الشحنة بدون QR (استلام يدوي)
+  /// POST /api/warehouses/mobile/school/deliveries/{shipment_id}/receive/
   Future<Map<String, dynamic>> receiveShipmentManually({
     required int shipmentId,
     required String receiverName,
