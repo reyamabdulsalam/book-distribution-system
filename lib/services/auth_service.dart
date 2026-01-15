@@ -183,12 +183,22 @@ class AuthService with ChangeNotifier {
     }
 
     try {
-      final response = await ApiClient.get('/api/users/me/');
+      // المسار الرسمي حسب التوثيق
+      final response = await ApiClient.get('/api/users/profile/');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _currentUser = User.fromJson(data);
         notifyListeners();
         return true;
+      } else if (response.statusCode == 404) {
+        // توافقية مع مسار أقدم
+        final fallback = await ApiClient.get('/api/users/me/');
+        if (fallback.statusCode == 200) {
+          final data = jsonDecode(fallback.body);
+          _currentUser = User.fromJson(data);
+          notifyListeners();
+          return true;
+        }
       }
     } catch (e) {
       if (kDebugMode) print('Session check error: $e');

@@ -230,21 +230,25 @@ class ShipmentService with ChangeNotifier {
     }
   }
 
-  /// 6.5 التحقق من رمز QR عبر API الموحد
+  /// 6.5 مسح/تأكيد QR حسب التوثيق الرسمي
+  /// POST /api/warehouses/qr/scan/
   Future<Map<String, dynamic>> verifyQR({
     required String qrCode,
-    int? shipmentId,
+    String? recipientName,
+    double? latitude,
+    double? longitude,
+    String? notes,
   }) async {
     try {
-      final uri = Uri.parse(
-          '${AppConfig.apiBaseUrl}/api/warehouses/scan-qr/');
+      final uri = Uri.parse('${AppConfig.apiBaseUrl}/api/warehouses/qr/scan/');
 
       final payload = <String, dynamic>{
-        'qr_data': qrCode,
+        'qr_token': qrCode,
+        if (recipientName != null) 'recipient_name': recipientName,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
+        if (notes != null && notes.isNotEmpty) 'notes': notes,
       };
-      if (shipmentId != null) {
-        payload['shipment_id'] = shipmentId;
-      }
 
       final response = await http.post(
         uri,
@@ -257,18 +261,19 @@ class ShipmentService with ChangeNotifier {
         print('Body: ${response.body}');
       }
 
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(response.bodyBytes));
         return {
           'success': true,
-          'message': data['message'] ?? 'تم التحقق من رمز QR بنجاح',
-          'data': data,
+          'message': body['message'] ?? 'تم تأكيد التسليم بنجاح',
+          'shipment': body['shipment'],
         };
       } else {
-        final error = jsonDecode(response.body);
         return {
           'success': false,
-          'message': error['error'] ?? 'فشل التحقق من رمز QR',
+          'message': body['error'] ?? 'فشل التحقق من رمز QR',
+          'expired': body['expired'] ?? false,
         };
       }
     } catch (e) {

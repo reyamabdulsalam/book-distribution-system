@@ -117,10 +117,10 @@ class AppConfig {
   //      flutter run -d <deviceId> --dart-define=API_BASE_URL=http://192.168.1.100:8000
   //  - Production / hosted backend:
   //      flutter build apk --dart-define=API_BASE_URL=https://api.yourdomain.com
-
   static const String apiBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://45.77.65.134',
-);
+    'API_BASE_URL',
+    // Production backend (with explicit port) is the default; override via --dart-define as needed
+    defaultValue: 'http://45.77.65.134:8000',
+  );
 
 }
