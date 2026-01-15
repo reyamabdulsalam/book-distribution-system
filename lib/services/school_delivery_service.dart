@@ -103,8 +103,8 @@ class SchoolDeliveryService with ChangeNotifier {
         headers: ApiClient.defaultHeaders(),
         body: jsonEncode({
           'receiver_name': receiverName,
-          'receiver_notes': receiverNotes ?? '',
-          'delivery_condition': deliveryCondition,
+          'notes': receiverNotes ?? '',
+          'condition': deliveryCondition,
         }),
       ).timeout(Duration(seconds: 15));
 
